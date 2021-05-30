@@ -1,6 +1,8 @@
 import {IssueList} from './IssueList.jsx';
-import {IssueEdit} from './IssueEdit.jsx'
-import IssueAdd from './IssueAdd.jsx'
+import IssueEdit from './IssueEdit.jsx';
+import IssueAdd from './IssueAdd.jsx';
+import Template from './Template.jsx'
+import Success from './loginSuccess.jsx'
 import 'babel-polyfill';
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -8,21 +10,25 @@ import {
     BrowserRouter,
     Switch,
     Route,
-    Link
-
-} from 'react-router-dom';
+    Link,
+    withRouter,
+    Redirect
+} from 'react-router-dom'; 
 
 const contentNode = document.getElementById('contents');
-const noMatch = () => <p>Page Not Found</p>
+const NoMatch = () => <p>Page Not Found</p>
 
 const RoutedApp = () =>(
     <BrowserRouter>
-        <Switch>
-            <Route exact path = '/edit' component={IssueEdit}/>
-            <Route exact path='/auth/google/success' component={IssueList}/>
-            <Route exact path='/' component={IssueList}/>
-            <Route path='*' component = {noMatch}/>
-        </Switch>
+        <Template>
+            <Switch>
+                <Redirect exact from='/' to ='issues'/>
+                <Route path = '/edit/:id' component={withRouter(IssueEdit)}></Route>
+                <Route path = '/auth/google/success'> <Success/> </Route>
+                <Route path = '/issues' component={withRouter(IssueList)}/>
+                <Route path='*'> <NoMatch/> </Route>
+            </Switch>
+        </Template>
     </BrowserRouter>
 )
 

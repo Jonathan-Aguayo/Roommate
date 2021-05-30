@@ -12,68 +12,61 @@ import Paper from '@material-ui/core/Paper';
 import { makeStyles } from '@material-ui/core/styles';
 import {IconButton} from '@material-ui/core';
 import {Delete} from '@material-ui/icons';
+import {Edit} from '@material-ui/icons';
+import issues from '../server/issues.js';
+import { Redirect } from 'react-router';
  
 const useStyles = makeStyles({
   table: {
-    minWidth: 650,
+    minWidth: 300,
   },
 });
 
-export class IssueRow extends React.Component 
+class IssueRow extends React.Component 
 {
     constructor(props)
     {
         super();
         this.props = props;
-        this.deleteIssue = this.deleteIssue.bind(this);
     }
-    
-    deleteIssue()
-    {
-        const issueId = this.props.issue._id
-        fetch(`/api/v1/issues/${issueId}`, 
-        {method: 'DELETE',
-        headers: {'Content-Type': 'application/json '}
-        }
-        ).then(response => {
-            if(response.ok){
-                alert('successfully deleted issue: '+ this.props.issue._id)
-            }
-        })
-        .catch(err => {
-            console.log(err);
-        })
-    }
-    
+        
     
     render()
     {
     return(
     <TableRow>
-        <TableCell><IconButton color='secondary' onClick={this.deleteIssue}> <Delete/> </IconButton></TableCell>
+        <TableCell><IconButton color='secondary' onClick={() => {this.props.deleteIssue(this.props.issue._id)}}> <Delete/> </IconButton></TableCell>
+        <TableCell><IconButton style={{color:'grey'}} href = {`/edit/${this.props.issue._id}`}><Edit/> </IconButton></TableCell>
         <TableCell>{this.props.issue._id}</TableCell>
         <TableCell>{this.props.issue.status}</TableCell>
         <TableCell>{this.props.issue.owner}</TableCell>
         <TableCell>{this.props.issue.created.toDateString()}</TableCell>
         <TableCell>{this.props.issue.effort}</TableCell>
         <TableCell>{this.props.issue.completionDate ?
-        props.issue.completionDate.toDateString() : ''}</TableCell>
+        this.props.issue.completionDate.toDateString() : ''}</TableCell>
         <TableCell>{this.props.issue.title}</TableCell>
     </TableRow>
     );  
     } 
 }
 
-const IssueTable = (props) =>
+class IssueTable extends React.Component
 {
-    const classes = useStyles();
-    const issueRows = props.issues.map(issue => <IssueRow key={issue.id} issue={issue}/>)
+    constructor(props)
+    {
+        super(props);
+    }
+
+    render()
+    {
+    const issueRows = this.props.issues.map(issue => <IssueRow key={issue.id} issue={issue} deleteIssue={this.props.deleteIssue} />)
     return (
         <TableContainer component={Paper}>
-            <Table className = {classes.table} aria-label='Simple Table'>
+            <Table aria-label='Simple Table'>
                 <TableHead>
                     <TableRow>
                         <TableCell component="th" scope="row"> Delete </TableCell>
+                        <TableCell component="th" scope="row"> Edit</TableCell>
                         <TableCell component="th" scope="row"> ID </TableCell>
                         <TableCell component="th" scope="row"> Status </TableCell>
                         <TableCell component="th" scope="row"> Owner </TableCell>
@@ -89,15 +82,35 @@ const IssueTable = (props) =>
             </Table>
         </TableContainer>
     );
+    }
 }
 
 export class IssueList extends React.Component
 {
-    constructor()
+    constructor(props)
     {
-        super();
-        this.state = {issues: new Array()};
+        super(props);
+        this.state = {issues: new Array(), mounted:false};
         this.createIssue = this.createIssue.bind(this);
+        this.deleteIssue= this.deleteIssue.bind(this);
+        this.setFilter = this.setFilter.bind(this);
+        this.componentDidUpdate = this.componentDidUpdate.bind(this);
+    }
+
+    setFilter(search)
+    {
+        const searchParams = new URLSearchParams(search);
+        this.props.history.push({ pathname: this.props.location.pathname, search:searchParams.toString() })
+    }
+
+    componentDidUpdate(prevProps) 
+    {
+        const oldQuery = prevProps.location.search;
+        const newQuery = this.props.location.search;
+        if (oldQuery === newQuery) {
+        return;
+        }
+        this.loadData();
     }
 
     componentDidMount()
@@ -105,9 +118,30 @@ export class IssueList extends React.Component
         this.loadData();
     }
 
+    deleteIssue(IssueID)
+    {
+        fetch(`/api/v1/issues/${IssueID}`, 
+        {method: 'DELETE',
+        headers: {'Content-Type': 'application/json '}
+        }
+        ).then(response => {
+            if(response.ok){
+                const updatedIssues = this.state.issues.filter( (value, index, arr) =>
+                {
+                    console.log(value);
+                    return value._id != IssueID;
+                });
+                this.setState({issues: updatedIssues})
+            }
+        })
+        .catch(err => {
+            console.log(err);
+        })
+    }
+
     loadData()
     {
-        fetch('/api/v1/issues').then(response => 
+        fetch(`/api/v1/issues${this.props.location.search}`).then(response => 
             response.json()).then(data => 
             {
                 console.log("Total count of records:", data._metadata.total_count);
@@ -141,22 +175,19 @@ export class IssueList extends React.Component
                 });
             }
             else{
-                response.json().then(error => {alert('Failed to add issue: ' + error.message)
+                response.json().then(error => {alert('Failed to add issue: ' + error.error)
                 });
             }
         }).catch(err => {alert('Error in sending data to server: ' + err.message)});
     }
  
-
     render()
     {
         return(
             <div>
-                <h1> Issue Tracker</h1>
-                <IssueFilter/>
-                <IssueTable issues = {this.state.issues}/>
+                <IssueFilter setFilter = {this.setFilter} initFilter={this.props.location.search} />
+                <IssueTable deleteIssue = {this.deleteIssue} issues = {this.state.issues}/>
                 <IssueAdd createIssue = {this.createIssue}/>
-                <hr/>
             </div>
         );
     }
