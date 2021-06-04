@@ -82,6 +82,11 @@ app.get('/api/v1/issues', function (req, res) {
     if (req.query.effortFrom || req.query.effortTo) filter.effort = {};
     if (req.query.effortFrom) filter.effort.$gte = parseInt(req.query.effortFrom, 10);
     if (req.query.effortTo) filter.effort.$lte = parseInt(req.query.effortTo, 10);
+    if (req.session.passport) {
+        filter.user = req.session.passport.user.id;
+    } else {
+        filter.user = '0000000000';
+    }
 
     db.db('test').collection('issues').find(filter).toArray().then(function (issues) {
         var metadata = { total_count: issues.length };
@@ -93,6 +98,11 @@ app.get('/api/v1/issues', function (req, res) {
 app.post('/api/v1/issues', function (req, res) {
     var newIssue = req.body;
     newIssue.created = new Date();
+    if (req.session.passport) {
+        newIssue.user = req.session.passport.user.id;
+    } else {
+        newIssue.user = '0000000000';
+    }
     if (!newIssue.status) {
         newIssue.status = 'New';
     }
@@ -142,7 +152,7 @@ app.put('/api/v1/issues/:issueID', function (req, res) {
     });
 });
 app.get('/auth/google', _passport2.default.authenticate('google', { scope: ['profile', 'email'] }));
-app.get('/logout', function (req, res) {
+app.get('/api/v1/logout', function (req, res) {
     req.session = null;
     req.logout();
     res.redirect('/');
@@ -150,14 +160,13 @@ app.get('/logout', function (req, res) {
 app.get('/auth/google/failure', function (req, res) {
     res.send('Failed to log in');
 });
-app.get('/login/success', function (req, res) {
-    console.log(req.user);
-    res.send({ user: JSON.stringify(req.user) });
-});
 app.get('/auth/google/callback', _passport2.default.authenticate('google', {
-    successRedirect: '/auth/google/success',
+    successRedirect: '/',
     failureRedirect: '/auth/google/failure'
 }));
+app.get('/homepage', function (req, res) {
+    res.sendFile(_path2.default.resolve('static/homepage.html'));
+});
 app.get('*', function (req, res) {
     res.sendFile(_path2.default.resolve('static/index.html'));
 });

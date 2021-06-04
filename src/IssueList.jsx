@@ -33,8 +33,10 @@ class IssueRow extends React.Component
     
     render()
     {
+    let backgroundColor = ''
+    this.props.issue.status === 'Closed' ? backgroundColor = 'SeaGreen' : backgroundColor = ''
     return(
-    <TableRow>
+    <TableRow style={{backgroundColor : backgroundColor}}>
         <TableCell><IconButton color='secondary' onClick={() => {this.props.deleteIssue(this.props.issue._id)}}> <Delete/> </IconButton></TableCell>
         <TableCell><IconButton style={{color:'grey'}} href = {`/edit/${this.props.issue._id}`}><Edit/> </IconButton></TableCell>
         <TableCell>{this.props.issue._id}</TableCell>
@@ -154,7 +156,7 @@ export class IssueList extends React.Component
                     this.setState({ issues:data.records });
             }).catch(err => 
                 {
-                    console.log(err);
+                    alert(`Error: ${err}`)
                 })
     }
 
@@ -175,7 +177,7 @@ export class IssueList extends React.Component
                 });
             }
             else{
-                response.json().then(error => {alert('Failed to add issue: ' + error.error)
+                response.json().then(error => {alert('Failed to add issue: ' + error)
                 });
             }
         }).catch(err => {alert('Error in sending data to server: ' + err.message)});

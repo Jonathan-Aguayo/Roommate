@@ -9,6 +9,7 @@ var Issueschema = Joi.object({
     owner: Joi.string().required(),
     title: Joi.string().required(),
     status: Joi.string().valid('New', 'Open', 'Assigned', 'Fixed', 'Verified', 'Closed').required(),
+    user: Joi.string(),
     created: Joi.date().required(),
     effort: Joi.number().min(1).max(5),
     completionDate: Joi.date()

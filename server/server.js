@@ -59,6 +59,14 @@ app.get('/api/v1/issues', (req,res) =>
     if (req.query.effortFrom || req.query.effortTo) filter.effort = {};
     if (req.query.effortFrom) filter.effort.$gte = parseInt(req.query.effortFrom, 10);
     if (req.query.effortTo) filter.effort.$lte = parseInt(req.query.effortTo, 10);
+    if(req.session.passport)
+    {
+        filter.user = req.session.passport.user.id;
+    }
+    else
+    {
+        filter.user = '0000000000'
+    }
 
     db.db('test').collection('issues').find(filter).toArray().then(issues => 
         {
@@ -70,6 +78,14 @@ app.post('/api/v1/issues', (req,res) =>
 {
     const newIssue = req.body;
     newIssue.created = new Date();
+    if(req.session.passport)
+    {
+        newIssue.user = req.session.passport.user.id
+    }
+    else
+    {
+        newIssue.user = '0000000000'
+    }
     if (!newIssue.status)
     {
         newIssue.status = 'New';
@@ -134,23 +150,23 @@ app.put('/api/v1/issues/:issueID', (req,res) =>
 });
 app.get('/auth/google', passport.authenticate('google', { scope:[ 'profile','email'] }
 ));
-app.get('/logout', (req,res) =>
+app.get('/api/v1/logout', (req,res) =>
 {
-    req.session=null;
+    req.session = null;
     req.logout();
     res.redirect('/');
 });
 app.get('/auth/google/failure',(req,res) => {res.send('Failed to log in')});
-app.get('/login/success',(req,res) => 
-{
-    console.log(req.user)
-    res.send({user:JSON.stringify(req.user)});
-});
 app.get( '/auth/google/callback',passport.authenticate( 'google', {
-        successRedirect: '/auth/google/success',
+        successRedirect: '/',
         failureRedirect: '/auth/google/failure'
 }));
+app.get('/homepage', (req,res) => 
+{
+    res.sendFile(path.resolve('static/homepage.html'))
+});
 app.get('*', (req,res) =>
 {
     res.sendFile(path.resolve('static/index.html'));
 });
+

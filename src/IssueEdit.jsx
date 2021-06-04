@@ -8,6 +8,7 @@ import {MenuItem} from '@material-ui/core';
 import {InputLabel} from '@material-ui/core';
 import 'whatwg-fetch';
 import _ from 'lodash'
+import {Paper} from '@material-ui/core'
 
 
 export default class IssueEdit extends React.Component 
@@ -29,7 +30,7 @@ export default class IssueEdit extends React.Component
                 created:''
             },
             urlId: this.props.match.params.id
-        };
+        };p
         this.handleSubmit = this.handleSubmit.bind(this);
         this.onChange = this.onChange.bind(this);
         this.loadData = this.loadData.bind(this);
@@ -136,7 +137,7 @@ export default class IssueEdit extends React.Component
     render() 
     {
         return (
-            <Container>
+            <Container component = {Paper} style={{textAlign:'center',}}>
                 <form name="issueEdit" onSubmit={this.handleSubmit} >
                     <Typography> ID: {this.displayData._id} </Typography>
                     <Typography> Title: {this.displayData.title} </Typography>
@@ -144,7 +145,6 @@ export default class IssueEdit extends React.Component
                     <Typography> Effort: {this.displayData.effort} </Typography>
                     <Typography> Created: {this.displayData.created} </Typography>
                     <Typography> Completed: {this.displayData.completionDate} </Typography>
-                    <Typography> Owner: {this.displayData.owner} </Typography>
                     <Typography> Owner: {this.displayData.owner} </Typography>
      
                     <FormControl>

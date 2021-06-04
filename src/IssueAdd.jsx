@@ -53,7 +53,7 @@ export default class IssueAdd extends React.Component
     render()
     {
         return(
-            <Container component={Paper} style={{}}>
+            <Container style={{marginLeft:0, marginTop:'10px'}} component = {Paper} maxWidth = {false}>
                 <form name="issueAdd" onSubmit={this.handleSubmit} >
                     <TextField name='owner' label="Owner"/>
                     <TextField name="title" label="Title"/>
@@ -67,7 +67,7 @@ export default class IssueAdd extends React.Component
                             <MenuItem value={5}>5</MenuItem>
                         </Select>
                     </FormControl>
-                    <Button variant="contained" style={{verticalAlign:'bottom'}} type='submit'>Add</Button>
+                    <Button variant="outlined" style={{verticalAlign:'bottom'}} type='submit'>Add</Button>
                 </form>
             </Container>
         );

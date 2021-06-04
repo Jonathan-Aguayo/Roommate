@@ -5,6 +5,8 @@ import {InputLabel} from '@material-ui/core'
 import {MenuItem} from '@material-ui/core';
 import Select from '@material-ui/core/Select';
 import {Typography} from '@material-ui/core'
+import {Paper} from '@material-ui/core'
+import {Container} from '@material-ui/core'
 export class IssueFilter extends React.Component
 {
     constructor(props)
@@ -76,10 +78,10 @@ export class IssueFilter extends React.Component
     {
         const Separator = () =><span> | </span>;
         return(
-            <div>
+            <Container component = {Paper} style = {{marginLeft:0, marginBottom:'10px'}} maxWidth = {false}>
                 <FormControl>
                     <InputLabel id='statusLabel'>Status</InputLabel>
-                    <Select value = {this.state.status} label='Status' labelID='statusLabel' id='status' onChange = {this.onChangeStatus} style={{minWidth:'110px'}}>
+                    <Select value = {this.state.status} label='Status' labelID='statusLabel' id='status' onChange = {this.onChangeStatus} style={{minWidth:'110px',}}>
                         <MenuItem value={''}>Any</MenuItem>
                         <MenuItem value={'New'}>New</MenuItem>
                         <MenuItem value={'Open'}>Open</MenuItem>
@@ -89,7 +91,7 @@ export class IssueFilter extends React.Component
                         <MenuItem value={'Closed'}>Closed</MenuItem>
                     </Select>
                 </FormControl>
-                <Separator />
+                
                 <FormControl>
                     <InputLabel id='effortFromLabel'>Effort from</InputLabel>
                     <Select value = {this.state.effortFrom} label='effortFrom' labelID='effortFromLabel' id='effortFrom' onChange = {this.onChangeEffortFrom} style={{minWidth:'110px'}}>
@@ -100,7 +102,7 @@ export class IssueFilter extends React.Component
                         <MenuItem value={5}>5</MenuItem>
                     </Select>
                 </FormControl>
-                <Separator />
+                
                 <FormControl>
                     <InputLabel id='effortToLabel'>Effort To</InputLabel>
                     <Select value = {this.state.effortTo} label='effortTo' labelID='effortTo' id='effortto' onChange = {this.onChangeEffortTo} style={{minWidth:'110px'}}>
@@ -111,10 +113,10 @@ export class IssueFilter extends React.Component
                         <MenuItem value={5}>5</MenuItem>
                     </Select>
                 </FormControl>
-                <Separator />
-                <Button onClick={this.clearFilter} variant='outlined'> reset </Button>
-                <Button onClick={this.applyFilter} variant='outlined'> Apply </Button>
-            </div>
+                
+                <Button onClick={this.clearFilter} variant='outlined' style = {{verticalAlign:'Bottom'}}> reset </Button>
+                <Button onClick={this.applyFilter} variant='outlined' style = {{verticalAlign:'Bottom'}}> Apply </Button>
+            </Container>
         );
     }
 }
