@@ -31,10 +31,10 @@ class Home extends React.Component
     {
         return(
             !this.state.logOut?
-            <Container style = {{paddingLeft: '55%'}}>
+            <div style={{padding:0, margin:0}}>
                 <Button variant='outlined' href='/auth/google' style = {{MarginRight: '5px'}}> Login </Button>
                 <Button variant = 'outlined' onClick = {this.logout} style = {{marginLeft: '5px'}}> Logout </Button>
-            </Container> :
+            </div> :
             <Redirect push to = '/' />
         )
     }

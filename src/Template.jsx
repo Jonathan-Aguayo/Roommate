@@ -1,9 +1,7 @@
 import React from 'react';
 import {AppBar} from '@material-ui/core';
 import {Toolbar} from '@material-ui/core';
-import {Button} from '@material-ui/core';
 import Home from './Homepage.jsx';
-import {Box} from '@material-ui/core';
 import {Container} from '@material-ui/core';
 
 class Template extends React.Component
@@ -16,13 +14,14 @@ class Template extends React.Component
 
     render()
     {
+    
         return(
-            <Container maxWidth = {false}>
-                <Container style = {{marginBottom: '7%'}} maxWidth = {false}>
+            <Container maxWidth = {false} >
+                <Container style = {{marginBottom: '7%', padding:0,}}>
                     <AppBar style= {{backgroundColor: 'WhiteSmoke'}}>
                         <Toolbar>
-                            <a href = '/' style = {{textDecoration: 'none', color: 'DimGrey'}}> <h1>Issue Tracker project</h1> </a>
-                            <Home redirect = 'hello'/>
+                            <a href = '/' style = {{textDecoration: 'none', color: 'DimGrey', marginRight:'70%'}}> <h1>Issue Tracker project</h1> </a>
+                            <Home/>
                         </Toolbar>
                     </AppBar>
                 </Container>
@@ -31,7 +30,7 @@ class Template extends React.Component
                     {this.props.children}
                 </Container>
 
-                <Container maxWidth = {false} style ={{marginTop: '50px'}}>
+                <Container maxWidth = {false} style ={{marginTop: '25%'}}>
                     Made by : Jonathan Aguayo
                 </Container>
             </Container>

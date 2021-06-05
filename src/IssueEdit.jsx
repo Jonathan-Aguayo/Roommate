@@ -30,7 +30,7 @@ export default class IssueEdit extends React.Component
                 created:''
             },
             urlId: this.props.match.params.id
-        };p
+        };
         this.handleSubmit = this.handleSubmit.bind(this);
         this.onChange = this.onChange.bind(this);
         this.loadData = this.loadData.bind(this);
