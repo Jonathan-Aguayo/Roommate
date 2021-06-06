@@ -11,8 +11,10 @@ require('dotenv').config();
 require('../passport-setup')
 const MongoClient = require('mongodb').MongoClient;
 let port = process.env.PORT || 3000;
-
+console.log(process.env.PORT);
 let db;
+app.set('port', (process.env.PORT || 5000));
+
 SourceMapSupport.install();
 //INITIALIZE DB
 const client = MongoClient('mongodb+srv://JonathanA:Aguayo1@cluster0.id5hf.mongodb.net/test',{ useNewUrlParser: true, useUnifiedTopology: true });

@@ -39,15 +39,16 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 require('dotenv').config();
 require('../passport-setup');
 var MongoClient = require('mongodb').MongoClient;
-
+var port = process.env.PORT || 3000;
+console.log(process.env.PORT);
 var db = void 0;
 _sourceMapSupport2.default.install();
 //INITIALIZE DB
 var client = MongoClient('mongodb+srv://JonathanA:Aguayo1@cluster0.id5hf.mongodb.net/test', { useNewUrlParser: true, useUnifiedTopology: true });
 client.connect().then(function (connection) {
     db = connection;
-    app.listen(3000, function () {
-        console.log('app started on port 3000');
+    app.listen(port, function () {
+        console.log('app started on port ' + port);
         console.log('Database connected successfully');
     });
 }).catch(function (error) {
