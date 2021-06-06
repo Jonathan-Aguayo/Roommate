@@ -1,9 +1,9 @@
 import React from 'react';
 import {AppBar} from '@material-ui/core';
 import {Toolbar} from '@material-ui/core';
-import Home from './Homepage.jsx';
+import Home from './LoginLogout.jsx';
 import {Container} from '@material-ui/core';
-
+import Help from './Help.jsx'
 class Template extends React.Component
 {
     constructor(props)
@@ -21,6 +21,7 @@ class Template extends React.Component
                     <AppBar style= {{backgroundColor: 'WhiteSmoke'}}>
                         <Toolbar>
                             <a href = '/' style = {{textDecoration: 'none', color: 'DimGrey', marginRight:'70%'}}> <h1>Issue Tracker project</h1> </a>
+                            <Help/>
                             <Home/>
                         </Toolbar>
                     </AppBar>

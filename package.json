@@ -1,7 +1,8 @@
 {
-  "name": "startingMern",
+  "name": "IssueTracker",
   "version": "1.0.0",
   "main": "index.js",
+  "homepage": "https://jonathan-aguayo.github.io/IssueTracker/",
   "author": "Jonathan Aguayo",
   "license": "MIT",
   "dependencies": {
@@ -34,6 +35,7 @@
     "babel-preset-react": "^6.24.1",
     "chokidar": "^3.5.1",
     "dotenv": "^9.0.2",
+    "gh-pages": "^3.2.0",
     "nodemon": "^2.0.7",
     "webpack": "^5.36.0",
     "webpack-dev-middleware": "^4.1.0",
@@ -42,6 +44,7 @@
     "whatwg-fetch": "^3.6.2"
   },
   "scripts": {
+    "build": "yarn webpack build",
     "watch": "yarn webpack serve --hot --inline",
     "start": "node_modules/.bin/nodemon -w dist dist/server.js",
     "watch-server": "yarn babel server --presets es2015 --out-dir dist --source-maps --watch",
