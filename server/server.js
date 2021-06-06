@@ -10,6 +10,7 @@ import 'babel-polyfill';
 require('dotenv').config();
 require('../passport-setup')
 const MongoClient = require('mongodb').MongoClient;
+let port = process.env.PORT || 3000;
 
 let db;
 SourceMapSupport.install();
@@ -17,8 +18,8 @@ SourceMapSupport.install();
 const client = MongoClient('mongodb+srv://JonathanA:Aguayo1@cluster0.id5hf.mongodb.net/test',{ useNewUrlParser: true, useUnifiedTopology: true });
 client.connect().then(connection => {
 db = connection;
-app.listen(process.env.PORT|| 3000, () => {
-console.log(`app started on port 3000 ${process.env.PORT || 3000}`)
+app.listen(port, () => {
+console.log(`app started on port ${port}`)
 console.log('Database connected successfully');
 });
 }).catch(error => {
