@@ -61,7 +61,7 @@ export default class Help extends React.Component
                     </DialogContent>
                     <DialogActions>
                         <Button autoFocus onClick={this.handleClose} color="primary">
-                            Save changes
+                            Close
                         </Button>
                     </DialogActions>
                 </Dialog>
