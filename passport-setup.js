@@ -17,7 +17,8 @@ passport.use(new GoogleStrategy({
     clientID: process.env.CLIENTID,
     clientSecret: process.env.CLIENTSECRET,
     callbackURL: "/auth/google/callback",
-    passReqToCallback   : true
+    passReqToCallback   : true,
+    proxy: true,
   },
   function(request, accessToken, refreshToken, profile, done) {
       //one I get profile, check if user exists in my database if and if not create one and if yes, log in 
