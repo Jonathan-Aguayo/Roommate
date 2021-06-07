@@ -13,7 +13,7 @@ const MongoClient = require('mongodb').MongoClient;
 let port = process.env.PORT || 3000;
 console.log(process.env.PORT);
 let db;
-app.set('port', (process.env.PORT || 5000));
+//app.set('port', (process.env.PORT || 5000));
 
 SourceMapSupport.install();
 //INITIALIZE DB
