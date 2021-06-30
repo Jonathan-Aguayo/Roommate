@@ -1,33 +1,37 @@
-import express from 'express';
+import express, { response } from 'express';
 import bodyParser from 'body-parser';
-import Issue from './issues.js';
-import mongoDB, { ObjectID } from 'mongodb';
+import { ObjectId, ObjectID } from 'mongodb';
 import SourceMapSupport from 'source-map-support';
 import passport from 'passport';
 import cookieSession from 'cookie-session'
 import path from 'path';
+import User from '../models/User';
+import HouseHold from '../models/Household';
 import 'babel-polyfill';
+import fetch from 'node-fetch';
+import array from 'lodash/array'
 require('dotenv').config();
 require('../passport-setup')
-const MongoClient = require('mongodb').MongoClient;
+const mongoose = require('mongoose');
 let port = process.env.PORT || 3000;
-console.log(process.env.PORT);
-let db;
 //app.set('port', (process.env.PORT || 5000));
-
 SourceMapSupport.install();
 //INITIALIZE DB
-const client = MongoClient('mongodb+srv://JonathanA:Aguayo1@cluster0.id5hf.mongodb.net/test',{ useNewUrlParser: true, useUnifiedTopology: true });
-client.connect().then(connection => {
-db = connection;
-app.listen(port, () => {
-console.log(`app started on port ${port}`)
-console.log('Database connected successfully');
-});
-}).catch(error => {
-console.log('ERROR when connecting:', error);
-});
+mongoose.connect('mongodb+srv://JonathanA:Alpha4086465832@roommatecluster.wjtg8.mongodb.net/Roommates?retryWrites=true&w=majority',{ useNewUrlParser: true, useUnifiedTopology: true })
+.then(connection => 
+    {
+        let server = app.listen(port, () => 
+        {
+            console.log(`app started on port ${port}`)
+            console.log('Database connected successfully');
+        });
 
+        server.setTimeout(1200000000);
+    })
+.catch(error => 
+    {
+        console.log('ERROR when connecting:', error);
+    });
 const app = express();
 //MIDDLEWARE
 
@@ -43,131 +47,212 @@ app.use(passport.session());
 
 
 //ROUTES
-app.get('/api/v1/issues/:issueID', (req,res) =>
+const isLoggedIn = (req,res,next) =>
 {
-    db.db('test').collection('issues').findOne({"_id": mongoDB.ObjectID(req.params.issueID)}).then(issue =>
+    if(req.session.passport)
+    {
+        next();
+    }
+    else
+    {
+        res.status(401).json({message: 'Route only accessible to logged in users'})
+    }
+}
+
+const isAuthorized = (houseHold) => 
+{
+    if(houseHold.owner === req.session.passport.user.user._id)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+app.post('/api/v1/createHousehold', isLoggedIn, (req,res) => 
+{
+    let currentUser;
+    User.findById(req.session.passport.user.user._id).then(user => 
         {
-            res.json({record: issue});
-        })
-        .catch(err=>
+            currentUser = user;
+            if(currentUser.household)
             {
-            res.json(400).send('Issue ID is not valid')
-            });   
+                res.status(500).json({message: 'Users are only allowed to be a part of one household at a time'})
+            }
+
+            else
+            {
+                fetch(`https://www.googleapis.com/calendar/v3/calendars?key=${process.env.APIKEY}`, {
+                    method:'POST',
+                    headers:{'Authorization':`Bearer ${req.session.passport.user.accessToken}`, 'Accept':'application/json','Content-Type':'application/json'},
+                    body:JSON.stringify({'summary':req.body.houseName}),
+                })                                                
+                .then(response => 
+                {
+                    if(response.ok)
+                    {
+                        response.json().then(message => 
+                        {
+                            const queryFilter = {googleID: req.session.passport.user.user.googleID};
+                            User.findOne(queryFilter).then(user => 
+                            {
+                                HouseHold.create({
+                                    houseName: JSON.stringify(req.body.houseName),
+                                    calendarID: message.id,
+                                    owner: user._id,
+                                    members: [user,]
+                                })
+                                .then(newHousehold => 
+                                {
+                                    User.updateOne(queryFilter, {household:newHousehold._id} ).then( () => 
+                                    {
+                                        res.status(200).json(newHousehold)
+                                    })
+                                })
+                            })
+
+                        })
+                    }
+                    else
+                    {
+                        res.status(500).send({message: 'Error when creating calendar'});
+                    }
+                })
+                .catch(err => 
+                {
+                    res.status(500).send(err)
+                })
+            }
+        });
 });
 
-app.get('/api/v1/issues', (req,res) =>
+app.post('/api/v1/events', isLoggedIn, (req,res) => 
 {
-    const filter = {};
-    if(req.query.status) filter.status = req.query.status;
-    if (req.query.effortFrom || req.query.effortTo) filter.effort = {};
-    if (req.query.effortFrom) filter.effort.$gte = parseInt(req.query.effortFrom, 10);
-    if (req.query.effortTo) filter.effort.$lte = parseInt(req.query.effortTo, 10);
-    if(req.session.passport)
+    HouseHold.findById(req.session.passport.user.user.household).then(house => 
     {
-        filter.user = req.session.passport.user.id;
-    }
-    else
-    {
-        filter.user = '0000000000'
-    }
-
-    db.db('test').collection('issues').find(filter).toArray().then(issues => 
+        console.log(house);
+        fetch(`https://www.googleapis.com/calendar/v3/calendars/${house.calendarID}/events?key=${process.env.APIKEY}`, {
+            method:'POST',
+            headers:{'Authorization':`Bearer ${req.session.passport.user.accessToken}`, 'Accept':'application/json','Content-Type':'application/json'},
+            body:JSON.stringify(req.body.eventBody),
+        })
+        .then(response => 
         {
-            const metadata = { total_count: issues.length };
-            res.json({_metadata: metadata, records: issues});
-        }).catch(error => {console.log(error); res.status(500).json({message: `Internal server error: ${error}`}); });
-});
-app.post('/api/v1/issues', (req,res) => 
-{
-    const newIssue = req.body;
-    newIssue.created = new Date();
-    if(req.session.passport)
-    {
-        newIssue.user = req.session.passport.user.id
-    }
-    else
-    {
-        newIssue.user = '0000000000'
-    }
-    if (!newIssue.status)
-    {
-        newIssue.status = 'New';
-    }   
-    let error = Issue.validateIssue(newIssue);
-    if(error)
-    {
-        res.status(400).json({error});
-        return;
-    }
+            if(response.ok)
+            {
+                response.json().then(message => 
+                {
+                    res.status(200).json({'message':message});
+                })
+                
+            }
+            else
+            {
+                res.status(501).json({message:'problem creating google calendar event'});
+            }
+        })
+        .catch(err => 
+        {
+            res.status(500).json({message: err});
+        })
+    })
+})
 
-    db.db('test').collection('issues').insertOne(newIssue, (err,db) => {
-        if(err)
-            res.json(400).send(err)
+app.get('/api/v1/houseHolds/:houseID', (req,res) => 
+{
+    HouseHold.findById(req.params.houseID).then(houseHold => 
+        {
+            res.status(200).json(houseHold);xxxz
+        })
+        .catch(err => 
+        {
+            res.status(501).json({'message': err})
+        })
+})
+
+app.get('/api/v1/users', isLoggedIn, (req,res) => 
+{
+    User.findById(req.session.passport.user.user._id).then( user => 
+    {
+        res.status(200).json(user);
+    })
+    .catch(err => 
+    {
+        res.status(500).json(err);
+    })
+})
+
+app.get('/api/v1/houseHolds/', isLoggedIn, (req,res) => 
+{
+    let userHousehold;
+
+    User.findById(req.session.passport.user.user._id).then(user => 
+        {
+            HouseHold.findById(user.household).then(house => 
+                {
+                    userHousehold = house;
+                    res.status(200).json({userHousehold});
+                })
+        })
+        .catch(err => 
+        {
+            res.status(500).json(err)
+        })
+})
+
+app.delete('/api/v1/houseHolds/:houseID',isLoggedIn,(req,res) => 
+{
+    console.log(req.params.houseID);
+    HouseHold.findById(req.params.houseID).then(houseHold => 
+    {
+        if(houseHold.owner == req.session.passport.user.user._id)
+        {
+            HouseHold.deleteOne({_id: houseHold._id}).then( () => 
+            {
+                User.updateOne({_id:req.session.passport.user.user._id}, {household: null})
+                    .then( () => res.status(200).json({message: 'Household deleted successfully'}))
+            });
+        }
         else
-            res.json(newIssue);
-    });
-
-});
-app.delete('/api/v1/issues/:issueID', (req,res) =>
-{
-    db.db('test').collection('issues').findOne({"_id": mongoDB.ObjectID(req.params.issueID)}).then( () =>
         {
-            db.db('test').collection('issues').deleteOne({'_id':mongoDB.ObjectID(req.params.issueID)}).then( () => 
-            {
-                res.send(200)
-            })
+            res.status(401).json({message: 'Only owner of the house may delete the household'});
+        }
+        
+    })
+    .catch(err => 
+        {
+            console.log(err);
+            res.status(500).json({message: err})
         })
-        .catch(err=>
-            {
-            res.json(400).send('Issue ID is not valid')
-            });   
-});
-app.put('/api/v1/issues/:issueID', (req,res) =>
+})
+
+//GOOGLE OAUTH2.0 ROUTES
+app.get('/auth/loggedinonly',isLoggedIn, (req,res) =>
 {
-    let issueID;
-    try 
-    {
-        issueID = new ObjectID(req.params.issueID);
-    } 
-    catch (error)
-    {
-        res.status(422).json({ message: `Invalid issue ID format: ${error}` })
-        return;
-    }
-
-    const issue = req.body;
-    delete issue._id;
-
-    const error = Issue.validateIssue(issue);
-    if(error)
-    {
-        res.status(400).json({ message: `Invalid request ${error}` });
-        return;
-    }
-
-    db.db('test').collection('issues').update({_id: issueID}, Issue.convertIssue(issue)).then( () => 
-    {
-        db.db('test').collection('issues').find( {_id: issueID }).limit(1).next().then( (updatedIssue) =>{ res.json(updatedIssue) })
-        .catch( error => res.status(500).json({message: `Internal server Error: ${error}`}));
-    });
-});
-app.get('/auth/google', passport.authenticate('google', { scope:[ 'profile','email'] }
+    res.send('you are logged in!')
+})
+app.get('/auth/google', passport.authenticate('google', { scope:[ 'profile','email','https://www.googleapis.com/auth/calendar',] }
 ));
 app.get('/api/v1/logout', (req,res) =>
 {
     req.session = null;
     req.logout();
+    res.send(req.session);
     res.redirect('/');
 });
-app.get('/auth/google/failure',(req,res) => {res.send('Failed to log in')});
+app.get('/auth/google/failure',(req,res) => {res.send('Unable to login')});
 app.get( '/auth/google/callback',passport.authenticate( 'google', {
-        successRedirect: '/',
+        successRedirect: '/auth/google/success',
         failureRedirect: '/auth/google/failure'
 }));
-app.get('/homepage', (req,res) => 
+app.get('/auth/google/success',(req,res) => 
 {
-    res.sendFile(path.resolve('static/homepage.html'))
-});
+    res.send(req.session.passport);
+})
+
+//Static page route
 app.get('*', (req,res) =>
 {
     res.sendFile(path.resolve('static/index.html'));

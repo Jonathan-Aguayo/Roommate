@@ -1,42 +1,20 @@
 import React from 'react';
-import {AppBar} from '@material-ui/core';
-import {Toolbar} from '@material-ui/core';
-import Home from './LoginLogout.jsx';
-import {Container} from '@material-ui/core';
-import Help from './Help.jsx'
-class Template extends React.Component
+
+export default function Template(props)
 {
-    constructor(props)
-    {
-        super(props);
-        console.log(this.props)
-    }
+    return(
+        <div className='MainContainer'>
+            <div className='header'>
+                <h1>Header</h1>
+            </div>
 
-    render()
-    {
-    
-        return(
-            <Container maxWidth = {false} >
-                <Container style = {{marginBottom: '7%', padding:0,}}>
-                    <AppBar style= {{backgroundColor: 'WhiteSmoke'}}>
-                        <Toolbar>
-                            <a href = '/' style = {{textDecoration: 'none', color: 'DimGrey', marginRight:'70%'}}> <h1>Issue Tracker project</h1> </a>
-                            <Help/>
-                            <Home/>
-                        </Toolbar>
-                    </AppBar>
-                </Container>
+            <div className='body'>
+                {props.children}
+            </div>
 
-                <Container maxWidth = {false}>
-                    {this.props.children}
-                </Container>
-
-                <Container maxWidth = {false} style ={{marginTop: '25%'}}>
-                    Made by : Jonathan Aguayo
-                </Container>
-            </Container>
-        )
-    }
+            <div className='footer'>
+                <h1>Footer</h1>
+            </div>
+        </div>
+    )
 }
-
-export default Template;

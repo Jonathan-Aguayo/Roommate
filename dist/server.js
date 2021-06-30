@@ -8,13 +8,7 @@ var _bodyParser = require('body-parser');
 
 var _bodyParser2 = _interopRequireDefault(_bodyParser);
 
-var _issues = require('./issues.js');
-
-var _issues2 = _interopRequireDefault(_issues);
-
 var _mongodb = require('mongodb');
-
-var _mongodb2 = _interopRequireDefault(_mongodb);
 
 var _sourceMapSupport = require('source-map-support');
 
@@ -32,31 +26,43 @@ var _path = require('path');
 
 var _path2 = _interopRequireDefault(_path);
 
+var _User = require('../models/User');
+
+var _User2 = _interopRequireDefault(_User);
+
+var _Household = require('../models/Household');
+
+var _Household2 = _interopRequireDefault(_Household);
+
 require('babel-polyfill');
+
+var _nodeFetch = require('node-fetch');
+
+var _nodeFetch2 = _interopRequireDefault(_nodeFetch);
+
+var _array = require('lodash/array');
+
+var _array2 = _interopRequireDefault(_array);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 require('dotenv').config();
 require('../passport-setup');
-var MongoClient = require('mongodb').MongoClient;
+var mongoose = require('mongoose');
 var port = process.env.PORT || 3000;
-console.log(process.env.PORT);
-var db = void 0;
 //app.set('port', (process.env.PORT || 5000));
-
 _sourceMapSupport2.default.install();
 //INITIALIZE DB
-var client = MongoClient('mongodb+srv://JonathanA:Aguayo1@cluster0.id5hf.mongodb.net/test', { useNewUrlParser: true, useUnifiedTopology: true });
-client.connect().then(function (connection) {
-    db = connection;
-    app.listen(port, function () {
+mongoose.connect('mongodb+srv://JonathanA:Alpha4086465832@roommatecluster.wjtg8.mongodb.net/Roommates?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true }).then(function (connection) {
+    var server = app.listen(port, function () {
         console.log('app started on port ' + port);
         console.log('Database connected successfully');
     });
+
+    server.setTimeout(1200000000);
 }).catch(function (error) {
     console.log('ERROR when connecting:', error);
 });
-
 var app = (0, _express2.default)();
 //MIDDLEWARE
 
@@ -71,105 +77,151 @@ app.use(_passport2.default.initialize());
 app.use(_passport2.default.session());
 
 //ROUTES
-app.get('/api/v1/issues/:issueID', function (req, res) {
-    db.db('test').collection('issues').findOne({ "_id": _mongodb2.default.ObjectID(req.params.issueID) }).then(function (issue) {
-        res.json({ record: issue });
-    }).catch(function (err) {
-        res.json(400).send('Issue ID is not valid');
-    });
-});
-
-app.get('/api/v1/issues', function (req, res) {
-    var filter = {};
-    if (req.query.status) filter.status = req.query.status;
-    if (req.query.effortFrom || req.query.effortTo) filter.effort = {};
-    if (req.query.effortFrom) filter.effort.$gte = parseInt(req.query.effortFrom, 10);
-    if (req.query.effortTo) filter.effort.$lte = parseInt(req.query.effortTo, 10);
+var isLoggedIn = function isLoggedIn(req, res, next) {
     if (req.session.passport) {
-        filter.user = req.session.passport.user.id;
+        next();
     } else {
-        filter.user = '0000000000';
+        res.status(401).json({ message: 'Route only accessible to logged in users' });
     }
+};
 
-    db.db('test').collection('issues').find(filter).toArray().then(function (issues) {
-        var metadata = { total_count: issues.length };
-        res.json({ _metadata: metadata, records: issues });
-    }).catch(function (error) {
-        console.log(error);res.status(500).json({ message: 'Internal server error: ' + error });
-    });
-});
-app.post('/api/v1/issues', function (req, res) {
-    var newIssue = req.body;
-    newIssue.created = new Date();
-    if (req.session.passport) {
-        newIssue.user = req.session.passport.user.id;
+var isAuthorized = function isAuthorized(houseHold) {
+    if (houseHold.owner === req.session.passport.user.user._id) {
+        return true;
     } else {
-        newIssue.user = '0000000000';
+        return false;
     }
-    if (!newIssue.status) {
-        newIssue.status = 'New';
-    }
-    var error = _issues2.default.validateIssue(newIssue);
-    if (error) {
-        res.status(400).json({ error: error });
-        return;
-    }
+};
 
-    db.db('test').collection('issues').insertOne(newIssue, function (err, db) {
-        if (err) res.json(400).send(err);else res.json(newIssue);
+app.post('/api/v1/createHousehold', isLoggedIn, function (req, res) {
+    var currentUser = void 0;
+    _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
+        currentUser = user;
+        if (currentUser.household) {
+            res.status(500).json({ message: 'Users are only allowed to be a part of one household at a time' });
+        } else {
+            (0, _nodeFetch2.default)('https://www.googleapis.com/calendar/v3/calendars?key=' + process.env.APIKEY, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + req.session.passport.user.accessToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 'summary': req.body.houseName })
+            }).then(function (response) {
+                if (response.ok) {
+                    response.json().then(function (message) {
+                        var queryFilter = { googleID: req.session.passport.user.user.googleID };
+                        _User2.default.findOne(queryFilter).then(function (user) {
+                            _Household2.default.create({
+                                houseName: JSON.stringify(req.body.houseName),
+                                calendarID: message.id,
+                                owner: user._id,
+                                members: [user]
+                            }).then(function (newHousehold) {
+                                _User2.default.updateOne(queryFilter, { household: newHousehold._id }).then(function () {
+                                    res.status(200).json(newHousehold);
+                                });
+                            });
+                        });
+                    });
+                } else {
+                    res.status(500).send({ message: 'Error when creating calendar' });
+                }
+            }).catch(function (err) {
+                res.status(500).send(err);
+            });
+        }
     });
 });
-app.delete('/api/v1/issues/:issueID', function (req, res) {
-    db.db('test').collection('issues').findOne({ "_id": _mongodb2.default.ObjectID(req.params.issueID) }).then(function () {
-        db.db('test').collection('issues').deleteOne({ '_id': _mongodb2.default.ObjectID(req.params.issueID) }).then(function () {
-            res.send(200);
-        });
-    }).catch(function (err) {
-        res.json(400).send('Issue ID is not valid');
-    });
-});
-app.put('/api/v1/issues/:issueID', function (req, res) {
-    var issueID = void 0;
-    try {
-        issueID = new _mongodb.ObjectID(req.params.issueID);
-    } catch (error) {
-        res.status(422).json({ message: 'Invalid issue ID format: ' + error });
-        return;
-    }
 
-    var issue = req.body;
-    delete issue._id;
-
-    var error = _issues2.default.validateIssue(issue);
-    if (error) {
-        res.status(400).json({ message: 'Invalid request ' + error });
-        return;
-    }
-
-    db.db('test').collection('issues').update({ _id: issueID }, _issues2.default.convertIssue(issue)).then(function () {
-        db.db('test').collection('issues').find({ _id: issueID }).limit(1).next().then(function (updatedIssue) {
-            res.json(updatedIssue);
-        }).catch(function (error) {
-            return res.status(500).json({ message: 'Internal server Error: ' + error });
+app.post('/api/v1/events', isLoggedIn, function (req, res) {
+    _Household2.default.findById(req.session.passport.user.user.household).then(function (house) {
+        console.log(house);
+        (0, _nodeFetch2.default)('https://www.googleapis.com/calendar/v3/calendars/' + house.calendarID + '/events?key=' + process.env.APIKEY, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + req.session.passport.user.accessToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify(req.body.eventBody)
+        }).then(function (response) {
+            if (response.ok) {
+                response.json().then(function (message) {
+                    res.status(200).json({ 'message': message });
+                });
+            } else {
+                res.status(501).json({ message: 'problem creating google calendar event' });
+            }
+        }).catch(function (err) {
+            res.status(500).json({ message: err });
         });
     });
 });
-app.get('/auth/google', _passport2.default.authenticate('google', { scope: ['profile', 'email'] }));
+
+app.get('/api/v1/houseHolds/:houseID', function (req, res) {
+    _Household2.default.findById(req.params.houseID).then(function (houseHold) {
+        res.status(200).json(houseHold);xxxz;
+    }).catch(function (err) {
+        res.status(501).json({ 'message': err });
+    });
+});
+
+app.get('/api/v1/users', isLoggedIn, function (req, res) {
+    _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
+        res.status(200).json(user);
+    }).catch(function (err) {
+        res.status(500).json(err);
+    });
+});
+
+app.get('/api/v1/houseHolds/', isLoggedIn, function (req, res) {
+    var userHousehold = void 0;
+
+    _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
+        _Household2.default.findById(user.household).then(function (house) {
+            userHousehold = house;
+            res.status(200).json({ userHousehold: userHousehold });
+        });
+    }).catch(function (err) {
+        res.status(500).json(err);
+    });
+});
+
+app.delete('/api/v1/houseHolds/:houseID', isLoggedIn, function (req, res) {
+    console.log(req.params.houseID);
+    _Household2.default.findById(req.params.houseID).then(function (houseHold) {
+        if (houseHold.owner == req.session.passport.user.user._id) {
+            _Household2.default.deleteOne({ _id: houseHold._id }).then(function () {
+                _User2.default.updateOne({ _id: req.session.passport.user.user._id }, { household: null }).then(function () {
+                    return res.status(200).json({ message: 'Household deleted successfully' });
+                });
+            });
+        } else {
+            res.status(401).json({ message: 'Only owner of the house may delete the household' });
+        }
+    }).catch(function (err) {
+        console.log(err);
+        res.status(500).json({ message: err });
+    });
+});
+
+//GOOGLE OAUTH2.0 ROUTES
+app.get('/auth/loggedinonly', isLoggedIn, function (req, res) {
+    res.send('you are logged in!');
+});
+app.get('/auth/google', _passport2.default.authenticate('google', { scope: ['profile', 'email', 'https://www.googleapis.com/auth/calendar'] }));
 app.get('/api/v1/logout', function (req, res) {
     req.session = null;
     req.logout();
+    res.send(req.session);
     res.redirect('/');
 });
 app.get('/auth/google/failure', function (req, res) {
-    res.send('Failed to log in');
+    res.send('Unable to login');
 });
 app.get('/auth/google/callback', _passport2.default.authenticate('google', {
-    successRedirect: '/',
+    successRedirect: '/auth/google/success',
     failureRedirect: '/auth/google/failure'
 }));
-app.get('/homepage', function (req, res) {
-    res.sendFile(_path2.default.resolve('static/homepage.html'));
+app.get('/auth/google/success', function (req, res) {
+    res.send(req.session.passport);
 });
+
+//Static page route
 app.get('*', function (req, res) {
     res.sendFile(_path2.default.resolve('static/index.html'));
 });

@@ -1,16 +1,15 @@
-const passport =require( 'passport');
-const GoogleStrategy =require ( 'passport-google-oauth2' ).Strategy;
+const passport = require( 'passport');
+const GoogleStrategy = require ( 'passport-google-oauth2' ).Strategy;
+const User = require('./models/User');
 
-passport.serializeUser( (user, done) =>
+passport.serializeUser( (message, done) =>
 {
-    console.log('passport.serialize function: '+user);
-    done(null,user);
+    done(null,message);
 });
 
-passport.deserializeUser( (user, done) =>
+passport.deserializeUser( (message, done) =>
 {
-    console.log('passport.deserialize function: '+user);
-    done(null,user); 
+    done(null,message); 
 } )
 
 passport.use(new GoogleStrategy({
@@ -21,8 +20,27 @@ passport.use(new GoogleStrategy({
     proxy: true,
   },
   function(request, accessToken, refreshToken, profile, done) {
-      //one I get profile, check if user exists in my database if and if not create one and if yes, log in 
-        console.log('passport.use function: ')
-      return done(null, profile);
+      User.findOne({googleID:profile.id})
+      .then( user => 
+        {
+            if(!user)
+            {
+               User.create({googleID: profile.id, firstName: profile.name.givenName, lastName: profile.name.familyName, email:profile.email, })
+               .then( user => {
+                   return done(null,{user,'accessToken': accessToken });
+               })
+               .catch( err => {
+                    return done(null, false, {message: err});
+               });
+            }
+            else
+            {
+                return done(null, {user,'accessToken': accessToken })
+            }
+        })
+      .catch( err => 
+        {
+            return done(null, false, {message: err});
+        });
   }
-));
+)); 
