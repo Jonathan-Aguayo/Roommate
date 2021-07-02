@@ -13,6 +13,8 @@ import CreateCalendar from './households/CreateHousehold.jsx';
 import ListHouseholds from './households/ListHouseholds.jsx';
 import DeleteCalendar from './households/DeleteHousehold.jsx';
 import {AddTask} from './households/AddTask.jsx';
+import {AddMessage} from './messages/AddMessage.jsx';
+import Mainview from './Mainview.jsx'
 
 const contentNode = document.getElementById('contents');
 const NoMatch = () => <p>Page Not Found</p>
@@ -23,10 +25,11 @@ const RoutedApp = () =>(
         <Switch>
             <Redirect exact from='/' to='/home'/>
             <Route path='/tasks'><h1>tasks</h1></Route>
-            <Route path='/home' component={CreateCalendar}/>
+            <Route path='/home' component={Mainview}/>
             <Route path='/list' component={ListHouseholds}/>
             <Route path='/delete' component={DeleteCalendar}/>
-            <Route path='/add' component={AddTask}/>
+            <Route exact path='/addTask' component={AddTask}/>
+            <Route exact path='/addMessage' component={AddMessage}/>
             <Route path='*' component={NoMatch}></Route>
         </Switch>
     </Template>

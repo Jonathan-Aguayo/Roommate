@@ -12,7 +12,10 @@ import {FormControl} from '@material-ui/core';
 import {InputLabel} from '@material-ui/core';
 import {Select} from '@material-ui/core';
 import {MenuItem} from '@material-ui/core';
-import {Button} from '@material-ui/core'
+import {Button} from '@material-ui/core';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
 
 export class AddTask extends React.Component
 {
@@ -29,8 +32,11 @@ export class AddTask extends React.Component
             title: '',
             body: '',
             household:{members:[], calendarID: ''},
+            open: false,
         }
         this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleClose = this.handleClose.bind(this);
+        this.handleOpen = this.handleOpen.bind(this);
     }
 
     componentDidMount()
@@ -41,7 +47,7 @@ export class AddTask extends React.Component
             {
                 res.json().then(message => 
                 {
-                    this.setState({household: message.userHousehold, })
+                    this.setState({household: message.message, })
                 })
             }
             else
@@ -107,63 +113,81 @@ export class AddTask extends React.Component
 
     }
 
+    handleClose()
+    {
+        this.setState({open: !this.state.open});
+    }
+
+    handleOpen()
+    {
+        this.setState({open: true})
+    }
+
     render()
     {
         let menuitems = this.state.household.members.map( (user,index) => <MenuItem value = {user.firstName} key = {index}> {user.firstName} </MenuItem>)
         return(
         <div>
-            <form noValidate autoComplete='off' name='addEvent'>
-                <MuiPickersUtilsProvider utils = {DateFnsUtils}>
-                    <KeyboardDatePicker
-                    disableToolbar
-                    variant = 'inline'
-                    format='MM/dd/yyyy'
-                    margin='normal'
-                    id='start-date-picker'
-                    label='Start date picker'
-                    value={this.state.startDate}
-                    name='start'
-                    onChange={ (date) => { this.setState({startDate: date}) } }/>
+            <Button variant = 'outlined' onClick={this.handleOpen}>
+                Add Task
+            </Button>
+            <Dialog onClose = {this.handleClose} open={this.state.open}>
+                <DialogTitle id="simple-dialog-title">Add Task</DialogTitle>
+                <form noValidate autoComplete='off' name='addEvent' style={{ padding: '25px' }}>
+                    <MuiPickersUtilsProvider utils = {DateFnsUtils}>
+                        <KeyboardDatePicker
+                        disableToolbar
+                        variant = 'inline'
+                        format='MM/dd/yyyy'
+                        margin='normal'
+                        id='start-date-picker'
+                        label='Start date picker'
+                        value={this.state.startDate}
+                        name='start'
+                        onChange={ (date) => { this.setState({startDate: date}) } }/>
 
-                    <KeyboardDatePicker
-                    disableToolbar
-                    margin='normal'
-                    variant='inline'
-                    id='end-date-picker'
-                    label="End date picker"
-                    format="MM/dd/yyyy"
-                    name='end'
-                    value={this.state.endDate}
-                    onChange={ (date) => { this.setState({endDate: date})} } />
-                </MuiPickersUtilsProvider>
-                
-                <TextField
-                id="summary"
-                label="Event Title"
-                multiline
-                name='summary'
-                rowsMax={2}
-                value={this.state.title}
-                onChange={ (event) => {this.setState({title: event.target.value})} }
-                variant="outlined" />
-                <FormControl>
-                    <InputLabel id="demo-simple-select-label">Assigned To</InputLabel>
-                    <Select
-                    style={{minWidth:120}}
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
-                    value={this.state.body}
-                    name='description'
-                    onChange={(event) => {this.setState({body: event.target.value})} }
-                    label = {menuitems[0]}
-                    >
-                        { menuitems }
-                    </Select>
-                </FormControl>
-                <Button value='submit' type='submit' onClick={this.handleSubmit}>Submit</Button>
-            </form>
+                        <div style={{ align: 'right'}}>
+                            <KeyboardDatePicker
+                            disableToolbar
+                            margin='normal'
+                            variant='inline'
+                            id='end-date-picker'
+                            label="End date picker"
+                            format="MM/dd/yyyy"
+                            name='end'
+                            value={this.state.endDate}
+                            onChange={ (date) => { this.setState({endDate: date})} } />
+                        </div>
+                    </MuiPickersUtilsProvider>
+                    
+                    <TextField
+                    id="summary"
+                    label="Event Title"
+                    multiline
+                    name='summary'
+                    rowsMax={2}
+                    value={this.state.title}
+                    onChange={ (event) => {this.setState({title: event.target.value})} } 
+                    style={{ paddingTop: '10px' }}/>
+                    <FormControl>
+                        <InputLabel id="demo-simple-select-label">Assigned To</InputLabel>
+                        <Select
+                        labelId="demo-simple-select-label"
+                        id="demo-simple-select"
+                        value={this.state.body}
+                        name='description'
+                        onChange={(event) => {this.setState({body: event.target.value})} }
+                        label = {menuitems[0]}
+                        style={{ paddingTop: '10px', minWidth:120 }}
+                        >
+                            { menuitems }
+                        </Select>
+                    </FormControl>
+                    <DialogActions style={{  }}>
+                        <Button value='submit' type='submit' onClick={this.handleSubmit} style={{verticalAlign:'bottom', }}>Submit</Button>
+                    </DialogActions>
+                </form>
+            </Dialog>
         </div>)
     }
-    
-
 }

@@ -7,6 +7,7 @@ import cookieSession from 'cookie-session'
 import path from 'path';
 import User from '../models/User';
 import HouseHold from '../models/Household';
+import Message from '../models/Message';
 import 'babel-polyfill';
 import fetch from 'node-fetch';
 import array from 'lodash/array'
@@ -75,57 +76,57 @@ app.post('/api/v1/createHousehold', isLoggedIn, (req,res) =>
 {
     let currentUser;
     User.findById(req.session.passport.user.user._id).then(user => 
+    {
+        currentUser = user;
+        if(currentUser.household)
         {
-            currentUser = user;
-            if(currentUser.household)
-            {
-                res.status(500).json({message: 'Users are only allowed to be a part of one household at a time'})
-            }
+            res.status(500).json({message: 'Users are only allowed to be a part of one household at a time'})
+        }
 
-            else
+        else
+        {
+            fetch(`https://www.googleapis.com/calendar/v3/calendars?key=${process.env.APIKEY}`, {
+                method:'POST',
+                headers:{'Authorization':`Bearer ${req.session.passport.user.accessToken}`, 'Accept':'application/json','Content-Type':'application/json'},
+                body:JSON.stringify({'summary':req.body.houseName}),
+            })                                                
+            .then(response => 
             {
-                fetch(`https://www.googleapis.com/calendar/v3/calendars?key=${process.env.APIKEY}`, {
-                    method:'POST',
-                    headers:{'Authorization':`Bearer ${req.session.passport.user.accessToken}`, 'Accept':'application/json','Content-Type':'application/json'},
-                    body:JSON.stringify({'summary':req.body.houseName}),
-                })                                                
-                .then(response => 
+                if(response.ok)
                 {
-                    if(response.ok)
+                    response.json().then(message => 
                     {
-                        response.json().then(message => 
+                        const queryFilter = {googleID: req.session.passport.user.user.googleID};
+                        User.findOne(queryFilter).then(user => 
                         {
-                            const queryFilter = {googleID: req.session.passport.user.user.googleID};
-                            User.findOne(queryFilter).then(user => 
+                            HouseHold.create({
+                                houseName: JSON.stringify(req.body.houseName),
+                                calendarID: message.id,
+                                owner: user._id,
+                                members: [user,]
+                            })
+                            .then(newHousehold => 
                             {
-                                HouseHold.create({
-                                    houseName: JSON.stringify(req.body.houseName),
-                                    calendarID: message.id,
-                                    owner: user._id,
-                                    members: [user,]
-                                })
-                                .then(newHousehold => 
+                                User.updateOne(queryFilter, {household:newHousehold._id} ).then( () => 
                                 {
-                                    User.updateOne(queryFilter, {household:newHousehold._id} ).then( () => 
-                                    {
-                                        res.status(200).json(newHousehold)
-                                    })
+                                    res.status(200).json(newHousehold)
                                 })
                             })
-
                         })
-                    }
-                    else
-                    {
-                        res.status(500).send({message: 'Error when creating calendar'});
-                    }
-                })
-                .catch(err => 
+
+                    })
+                }
+                else
                 {
-                    res.status(500).send(err)
-                })
-            }
-        });
+                    res.status(500).send({message: 'Error when creating calendar'});
+                }
+            })
+            .catch(err => 
+            {
+                res.status(500).send(err)
+            })
+        }
+    });
 });
 
 app.post('/api/v1/events', isLoggedIn, (req,res) => 
@@ -158,6 +159,44 @@ app.post('/api/v1/events', isLoggedIn, (req,res) =>
             res.status(500).json({message: err});
         })
     })
+})
+
+app.post('/api/v1/messages', isLoggedIn, (req,res) => 
+{
+    const message = req.body.messageBody;
+    message.household = req.session.passport.user.user.household;
+    console.log(message);
+    Message.create(
+        message
+    )
+    .then(newMessage => 
+    {
+        res.status(200).json({ message: newMessage });
+    })
+    .catch(err => 
+    {
+        res.status(500).json({ message: err });
+    })
+})
+
+app.get('/api/v1/messages', isLoggedIn, (req,res) => 
+{
+    if(req.session.passport.user.user.household)
+    {
+        const filter = {household: req.session.passport.user.user.household}
+        Message.find(filter).then(messages => 
+        {
+            res.status(200).json({message: messages})
+        })
+        .catch(err => 
+        {
+            res.status(500).json({message: err})
+        })
+    }
+    else
+    {
+        res.status(400).json({message: 'You must join a house to see household messages'})
+    }
 })
 
 app.get('/api/v1/houseHolds/:houseID', (req,res) => 
@@ -193,12 +232,12 @@ app.get('/api/v1/houseHolds/', isLoggedIn, (req,res) =>
             HouseHold.findById(user.household).then(house => 
                 {
                     userHousehold = house;
-                    res.status(200).json({userHousehold});
+                    res.status(200).json({message: userHousehold});
                 })
         })
         .catch(err => 
         {
-            res.status(500).json(err)
+            res.status(500).json({message: err})
         })
 })
 

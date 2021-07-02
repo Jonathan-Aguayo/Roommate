@@ -34,6 +34,10 @@ var _Household = require('../models/Household');
 
 var _Household2 = _interopRequireDefault(_Household);
 
+var _Message = require('../models/Message');
+
+var _Message2 = _interopRequireDefault(_Message);
+
 require('babel-polyfill');
 
 var _nodeFetch = require('node-fetch');
@@ -152,6 +156,30 @@ app.post('/api/v1/events', isLoggedIn, function (req, res) {
     });
 });
 
+app.post('/api/v1/messages', isLoggedIn, function (req, res) {
+    var message = req.body.messageBody;
+    message.household = req.session.passport.user.user.household;
+    console.log(message);
+    _Message2.default.create(message).then(function (newMessage) {
+        res.status(200).json({ message: newMessage });
+    }).catch(function (err) {
+        res.status(500).json({ message: err });
+    });
+});
+
+app.get('/api/v1/messages', isLoggedIn, function (req, res) {
+    if (req.session.passport.user.user.household) {
+        var filter = { household: req.session.passport.user.user.household };
+        _Message2.default.find(filter).then(function (messages) {
+            res.status(200).json({ message: messages });
+        }).catch(function (err) {
+            res.status(500).json({ message: err });
+        });
+    } else {
+        res.status(400).json({ message: 'You must join a house to see household messages' });
+    }
+});
+
 app.get('/api/v1/houseHolds/:houseID', function (req, res) {
     _Household2.default.findById(req.params.houseID).then(function (houseHold) {
         res.status(200).json(houseHold);xxxz;
@@ -174,10 +202,10 @@ app.get('/api/v1/houseHolds/', isLoggedIn, function (req, res) {
     _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
         _Household2.default.findById(user.household).then(function (house) {
             userHousehold = house;
-            res.status(200).json({ userHousehold: userHousehold });
+            res.status(200).json({ message: userHousehold });
         });
     }).catch(function (err) {
-        res.status(500).json(err);
+        res.status(500).json({ message: err });
     });
 });
 
