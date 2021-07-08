@@ -8,10 +8,8 @@ const HouseHoldSchema = new mongoose.Schema({
     members: [User.schema],
     groups: [[User.schema], ],
     created: {type: Date, required: true, default: Date.now()},
-    activeTasks: [mongodb.ObjectID],
-    previousTasks:[mongodb.ObjectID],
-    messages:[mongodb.ObjectID],
-    calendarIframe: ''
+    chores: [String],
+
 });
 
 const HouseHold = mongoose.model('HouseHold', HouseHoldSchema);

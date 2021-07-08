@@ -5,6 +5,7 @@ import {AddMessage} from './messages/AddMessage.jsx'
 import {Grid} from '@material-ui/core';
 import {Snackbar} from '@material-ui/core';
 import { SettingsInputComponentTwoTone } from '@material-ui/icons';
+import {Typography} from '@material-ui/core';
 
 
 export default class Home extends React.Component
@@ -33,10 +34,17 @@ export default class Home extends React.Component
                 res.json().then(message => 
                 {
                     this.setState({
-                        household: message.message.household, 
                         user: message.message.user,
-                        iframeID: message.message.household.calendarID.split('@'),
+                        household:null,
+                        iframeID: null,
                     })
+                    if(message.message.household)
+                    {
+                        this.setState({
+                            household:message.message.household,
+                            iframeID: message.message.household.calendarID.split('@'),
+                        })
+                    }
                 })
             }
             else
@@ -55,14 +63,17 @@ export default class Home extends React.Component
             {
                 res.json().then(message => 
                 {
+                    console.log(message.message);
                     this.setState({messages: message.message});
                 })
             }
             else
             {
-                res.json().then(message => 
-                {
-                })
+                this.setState(
+                    {
+                        messages: null
+                    })
+                
             }
         })
     }
@@ -108,9 +119,9 @@ export default class Home extends React.Component
         console.log(this.state.iframeID)
         return(
             <div>
-                {this.state.household._id?
-                    <Grid container spacing = {2}>
-                        <Grid item xs= {3} container direction="column" spacing={1}>
+                {this.state.user && this.state.household?
+                    <Grid container>
+                        <Grid item xs= {5} container direction="column" spacing={1}>
                             <Grid item xs={9}>
                                 <ViewMessages messages={this.state.messages}/>
                             </Grid>
@@ -123,12 +134,11 @@ export default class Home extends React.Component
                         <Grid item xs= {6}>
                             <iframe src={ `https://calendar.google.com/calendar/embed?src=${this.state.iframeID[0]}%40group.calendar.google.com& `}  width="1000" height="600" frameborder="0" scrolling="no"></iframe>
                         </Grid>
-                        <Grid item xs= {3}>
-
-                        </Grid>
                     </Grid>
                     :
-                    <p></p>
+                    <div>
+                             
+                    </div>
                 }
             </div>
         );

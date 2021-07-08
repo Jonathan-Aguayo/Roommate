@@ -153,6 +153,22 @@ export default function PrimarySearchAppBar(props) {
       open={isMobileMenuOpen}
       onClose={handleMobileMenuClose}
     >
+      {
+        props.user.firstName?
+        <MenuItem onClick={handleProfileMenuOpen}>
+        <IconButton
+          aria-label="account of current user"
+          aria-controls="primary-search-account-menu"
+          aria-haspopup="true"
+          color="inherit"
+        >
+        <Avatar 
+        alt={props.user.firstName}
+        src={props.user.picture}/>
+        </IconButton>
+        <p>{props.user.firstName}</p>
+      </MenuItem>
+      :
       <MenuItem onClick={handleProfileMenuOpen}>
         <IconButton
           aria-label="account of current user"
@@ -160,10 +176,11 @@ export default function PrimarySearchAppBar(props) {
           aria-haspopup="true"
           color="inherit"
         >
-          <Avatar />
+        <Avatar/>
         </IconButton>
-        <p>Profile</p>
+        <p>profile</p>
       </MenuItem>
+      }
     </Menu>
   );
 
@@ -196,7 +213,7 @@ export default function PrimarySearchAppBar(props) {
               color="inherit"
             >
               <Avatar 
-              alt='Jonathan'
+              alt={props.user.firstName}
               src={props.user.picture}/>
               
             </IconButton>

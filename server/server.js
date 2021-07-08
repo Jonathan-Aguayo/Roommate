@@ -192,6 +192,7 @@ app.post('/api/v1/messages', isLoggedIn, (req,res) =>
 {
     const message = req.body.messageBody;
     message.household = req.session.passport.user.user.household;
+    message.postedBy = req.session.passport.user.user;
     Message.create(
         message
     )
@@ -243,27 +244,35 @@ app.post('/api/v1/invite/', isLoggedIn, (req,res) =>
 
 app.get('/api/v1/user/', isLoggedIn, (req,res) => 
 {
-    let resObject = {};
-    User.findById(req.session.passport.user.user._id)
-    .then(user => 
-    {
-        resObject.user=user;
-        if(user.household && !user==null)
+    if(req.session.passport)
+    {   
+        let resObject = {};
+        User.findById(req.session.passport.user.user._id)
+        .then(user => 
         {
-            HouseHold.findById(user.household)
-            .then(house => 
+            resObject.user=user;
+            if(user.household)
             {
-                resObject.household = house;
+                HouseHold.findById(user.household)
+                .then(house => 
+                {
+                    resObject.household = house;
+                    res.status(200).json({message: resObject});
+                })
+            }
+            else
+            {
+                resObject.household = null;
                 res.status(200).json({message: resObject});
-            })
-        }
-        else
-        {
-            resObject.household = null;
-            res.status(200).json({message: resObject});
-        }
-        
-    })
+            }
+            
+        })
+    }
+    else
+    {
+        res.status(400);
+    }
+
 })
 
 app.get('/api/v1/messages', isLoggedIn, (req,res) => 
@@ -348,11 +357,6 @@ app.delete('/api/v1/houseHolds/:houseID',isLoggedIn,(req,res) =>
 //GOOGLE OAUTH2.0 ROUTES
 app.get('/auth/google/', passport.authenticate('google', { scope:[ 'profile','email','https://www.googleapis.com/auth/calendar',] }
 ));
-
-app.get('/auth/google/test', passport.authenticate('google',{ scope:[ 'profile','email'] }), (req,res) => 
-{
-    res.send('hello jonathan');
-})
 app.get('/api/v1/logout', (req,res) =>
 {
     req.session = null;
@@ -377,7 +381,7 @@ app.get('/auth/google/success/:house',(req,res) =>
 })
 
 //Static page route
-app.get('*', isLoggedIn,(req,res) =>
+app.get('*', (req,res) =>
 {
     res.sendFile(path.resolve('static/index.html'));
 });

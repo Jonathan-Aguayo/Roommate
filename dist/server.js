@@ -176,6 +176,7 @@ app.post('/api/v1/events', isLoggedIn, function (req, res) {
 app.post('/api/v1/messages', isLoggedIn, function (req, res) {
     var message = req.body.messageBody;
     message.household = req.session.passport.user.user.household;
+    message.postedBy = req.session.passport.user.user;
     _Message2.default.create(message).then(function (newMessage) {
         res.status(200).json({ message: newMessage });
     }).catch(function (err) {
@@ -211,19 +212,23 @@ app.post('/api/v1/invite/', isLoggedIn, function (req, res) {
 });
 
 app.get('/api/v1/user/', isLoggedIn, function (req, res) {
-    var resObject = {};
-    _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
-        resObject.user = user;
-        if (user.household && !user == null) {
-            _Household2.default.findById(user.household).then(function (house) {
-                resObject.household = house;
+    if (req.session.passport) {
+        var resObject = {};
+        _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
+            resObject.user = user;
+            if (user.household) {
+                _Household2.default.findById(user.household).then(function (house) {
+                    resObject.household = house;
+                    res.status(200).json({ message: resObject });
+                });
+            } else {
+                resObject.household = null;
                 res.status(200).json({ message: resObject });
-            });
-        } else {
-            resObject.household = null;
-            res.status(200).json({ message: resObject });
-        }
-    });
+            }
+        });
+    } else {
+        res.status(400);
+    }
 });
 
 app.get('/api/v1/messages', isLoggedIn, function (req, res) {
@@ -280,10 +285,6 @@ app.delete('/api/v1/houseHolds/:houseID', isLoggedIn, function (req, res) {
 
 //GOOGLE OAUTH2.0 ROUTES
 app.get('/auth/google/', _passport2.default.authenticate('google', { scope: ['profile', 'email', 'https://www.googleapis.com/auth/calendar'] }));
-
-app.get('/auth/google/test', _passport2.default.authenticate('google', { scope: ['profile', 'email'] }), function (req, res) {
-    res.send('hello jonathan');
-});
 app.get('/api/v1/logout', function (req, res) {
     req.session = null;
     req.logout();
@@ -305,7 +306,7 @@ app.get('/auth/google/success/:house', function (req, res) {
 });
 
 //Static page route
-app.get('*', isLoggedIn, function (req, res) {
+app.get('*', function (req, res) {
     res.sendFile(_path2.default.resolve('static/index.html'));
 });
 //# sourceMappingURL=server.js.map
