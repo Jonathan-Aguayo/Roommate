@@ -1,4 +1,4 @@
-import express, { response } from 'express';
+import express from 'express';
 import bodyParser from 'body-parser';
 import { ObjectId, ObjectID } from 'mongodb';
 import SourceMapSupport from 'source-map-support';
@@ -10,15 +10,16 @@ import HouseHold from '../models/Household';
 import Message from '../models/Message';
 import 'babel-polyfill';
 import fetch from 'node-fetch';
-import array from 'lodash/array'
+import nodemailer from 'nodemailer';
 require('dotenv').config();
 require('../passport-setup')
 const mongoose = require('mongoose');
+
 let port = process.env.PORT || 3000;
 //app.set('port', (process.env.PORT || 5000));
 SourceMapSupport.install();
 //INITIALIZE DB
-mongoose.connect('mongodb+srv://JonathanA:Alpha4086465832@roommatecluster.wjtg8.mongodb.net/Roommates?retryWrites=true&w=majority',{ useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(`mongodb+srv://JonathanA:${process.env.DBPASSWORD}@roommatecluster.wjtg8.mongodb.net/Roommates?retryWrites=true&w=majority`,{ useNewUrlParser: true, useUnifiedTopology: true })
 .then(connection => 
     {
         let server = app.listen(port, () => 
@@ -27,7 +28,7 @@ mongoose.connect('mongodb+srv://JonathanA:Alpha4086465832@roommatecluster.wjtg8.
             console.log('Database connected successfully');
         });
 
-        server.setTimeout(1200000000);
+        server.setTimeout(120000);
     })
 .catch(error => 
     {
@@ -72,13 +73,11 @@ const isAuthorized = (houseHold) =>
     }
 }
 
-app.post('/api/v1/createHousehold', isLoggedIn, (req,res) => 
+app.post('/api/v1/households', isLoggedIn, (req,res) => 
 {
-    let currentUser;
     User.findById(req.session.passport.user.user._id).then(user => 
     {
-        currentUser = user;
-        if(currentUser.household)
+        if(user.household)
         {
             res.status(500).json({message: 'Users are only allowed to be a part of one household at a time'})
         }
@@ -107,14 +106,15 @@ app.post('/api/v1/createHousehold', isLoggedIn, (req,res) =>
                             })
                             .then(newHousehold => 
                             {
-                                User.updateOne(queryFilter, {household:newHousehold._id} ).then( () => 
+                                req.session.passport.user.user.household = newHousehold._id;
+                                User.updateOne(queryFilter, {household:newHousehold._id}).then(update =>
                                 {
-                                    res.status(200).json(newHousehold)
+                                    res.status(200).json({ message: newHousehold })
                                 })
+ 
                             })
                         })
-
-                    })
+                    }) 
                 }
                 else
                 {
@@ -123,17 +123,44 @@ app.post('/api/v1/createHousehold', isLoggedIn, (req,res) =>
             })
             .catch(err => 
             {
-                res.status(500).send(err)
+                res.status(500).send(err) 
             })
         }
     });
 });
 
+app.get('/api/v1/households/public', isLoggedIn, (req,res) => 
+{
+    HouseHold.findById(req.session.passport.user.user.household).then(house =>
+    {
+        fetch(`https://www.googleapis.com/calendar/v3/calendars/${house.calendarID}/acl?key=${process.env.APIKEY}`,  
+        {
+            method:'POST',
+            headers:{'Authorization':`Bearer ${req.session.passport.user.accessToken}`, 'Accept':'application/json','Content-Type':'application/json'},
+            body:JSON.stringify({"role":"reader","scope":{"type":"default"}}),
+        })
+        .then(response => 
+        {
+            if(response.ok)
+            {
+                res.status(200).json({message: 'Success'});
+            }  
+            else
+            {
+                res.status(500).json({message: 'Problem making calendar public'});
+            }
+        })
+        .catch(err => 
+        {
+            res.status(500).json({message: err})
+        })
+    })
+})
+
 app.post('/api/v1/events', isLoggedIn, (req,res) => 
 {
     HouseHold.findById(req.session.passport.user.user.household).then(house => 
     {
-        console.log(house);
         fetch(`https://www.googleapis.com/calendar/v3/calendars/${house.calendarID}/events?key=${process.env.APIKEY}`, {
             method:'POST',
             headers:{'Authorization':`Bearer ${req.session.passport.user.accessToken}`, 'Accept':'application/json','Content-Type':'application/json'},
@@ -165,7 +192,6 @@ app.post('/api/v1/messages', isLoggedIn, (req,res) =>
 {
     const message = req.body.messageBody;
     message.household = req.session.passport.user.user.household;
-    console.log(message);
     Message.create(
         message
     )
@@ -176,6 +202,67 @@ app.post('/api/v1/messages', isLoggedIn, (req,res) =>
     .catch(err => 
     {
         res.status(500).json({ message: err });
+    })
+})
+
+app.post('/api/v1/invite/', isLoggedIn, (req,res) => 
+{
+    if(req.session.passport.user.user.household)
+    {
+        let transporter = nodemailer.createTransport({
+            service:'gmail',
+            auth: { user: process.env.MAILUSER, pass: process.env.MAILPASS},
+        })
+
+        let mailOptions = {
+            from: process.env.MAILUSER,
+            to: 'jonathanaguayoalpha@gmail.com',
+            subject: 'Invitation to Room8tes household!',
+            text: `Hi, ${req.session.passport.user.user.firstName} ${req.session.passport.user.user.lastName} is inviting to their house. Click here to join`,
+            html: '<p> <a href="http://localhost:8000/home"> Hello </a> </p>'
+        }
+
+        transporter.sendMail(mailOptions, (err, data) => 
+        {
+            if(err)
+            {
+                res.status(500).json({message: err})
+            }
+            else
+            {
+                res.status(200).json({message: 'Email sent successfully'})
+            }
+        })
+    }
+    else
+    {
+        res.status(501).json({message: 'You must create a household before you can invite someone'})
+    }
+
+});
+
+app.get('/api/v1/user/', isLoggedIn, (req,res) => 
+{
+    let resObject = {};
+    User.findById(req.session.passport.user.user._id)
+    .then(user => 
+    {
+        resObject.user=user;
+        if(user.household && !user==null)
+        {
+            HouseHold.findById(user.household)
+            .then(house => 
+            {
+                resObject.household = house;
+                res.status(200).json({message: resObject});
+            })
+        }
+        else
+        {
+            resObject.household = null;
+            res.status(200).json({message: resObject});
+        }
+        
     })
 })
 
@@ -203,7 +290,7 @@ app.get('/api/v1/houseHolds/:houseID', (req,res) =>
 {
     HouseHold.findById(req.params.houseID).then(houseHold => 
         {
-            res.status(200).json(houseHold);xxxz
+            res.status(200).json(houseHold);
         })
         .catch(err => 
         {
@@ -211,34 +298,19 @@ app.get('/api/v1/houseHolds/:houseID', (req,res) =>
         })
 })
 
-app.get('/api/v1/users', isLoggedIn, (req,res) => 
+app.get('/api/v1/houseHolds/', isLoggedIn, (req,res) => 
 {
-    User.findById(req.session.passport.user.user._id).then( user => 
+    User.findById(req.session.passport.user.user._id).then(user => 
     {
-        res.status(200).json(user);
+        HouseHold.findById(user.household).then(house => 
+        {
+            res.status(200).json({message: house});
+        })
     })
     .catch(err => 
     {
-        res.status(500).json(err);
+        res.status(500).json({message: err})
     })
-})
-
-app.get('/api/v1/houseHolds/', isLoggedIn, (req,res) => 
-{
-    let userHousehold;
-
-    User.findById(req.session.passport.user.user._id).then(user => 
-        {
-            HouseHold.findById(user.household).then(house => 
-                {
-                    userHousehold = house;
-                    res.status(200).json({message: userHousehold});
-                })
-        })
-        .catch(err => 
-        {
-            res.status(500).json({message: err})
-        })
 })
 
 app.delete('/api/v1/houseHolds/:houseID',isLoggedIn,(req,res) => 
@@ -250,8 +322,14 @@ app.delete('/api/v1/houseHolds/:houseID',isLoggedIn,(req,res) =>
         {
             HouseHold.deleteOne({_id: houseHold._id}).then( () => 
             {
-                User.updateOne({_id:req.session.passport.user.user._id}, {household: null})
-                    .then( () => res.status(200).json({message: 'Household deleted successfully'}))
+                User.updateOne({_id:req.session.passport.user.user._id}, {household: null}).then(update =>
+                {
+                    req.session.passport.user.user.household = null;
+                    Message.deleteMany({ household: req.params.houseID }).then(deleted=>
+                    {
+                        res.status(200).json({message: req.session.passport.user.user})
+                    })
+                })
             });
         }
         else
@@ -268,31 +346,38 @@ app.delete('/api/v1/houseHolds/:houseID',isLoggedIn,(req,res) =>
 })
 
 //GOOGLE OAUTH2.0 ROUTES
-app.get('/auth/loggedinonly',isLoggedIn, (req,res) =>
-{
-    res.send('you are logged in!')
-})
-app.get('/auth/google', passport.authenticate('google', { scope:[ 'profile','email','https://www.googleapis.com/auth/calendar',] }
+app.get('/auth/google/', passport.authenticate('google', { scope:[ 'profile','email','https://www.googleapis.com/auth/calendar',] }
 ));
+
+app.get('/auth/google/test', passport.authenticate('google',{ scope:[ 'profile','email'] }), (req,res) => 
+{
+    res.send('hello jonathan');
+})
 app.get('/api/v1/logout', (req,res) =>
 {
     req.session = null;
     req.logout();
-    res.send(req.session);
     res.redirect('/');
 });
 app.get('/auth/google/failure',(req,res) => {res.send('Unable to login')});
-app.get( '/auth/google/callback',passport.authenticate( 'google', {
-        successRedirect: '/auth/google/success',
-        failureRedirect: '/auth/google/failure'
-}));
+app.get( '/auth/google/callback/', 
+    passport.authenticate( 'google', {
+    successRedirect: `/auth/google/success`,
+    failureRedirect: '/auth/google/failure'
+    })
+);
+
 app.get('/auth/google/success',(req,res) => 
 {
     res.send(req.session.passport);
 })
+app.get('/auth/google/success/:house',(req,res) => 
+{
+    res.send(req.params.house);
+})
 
 //Static page route
-app.get('*', (req,res) =>
+app.get('*', isLoggedIn,(req,res) =>
 {
     res.sendFile(path.resolve('static/index.html'));
 });

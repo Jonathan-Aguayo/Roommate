@@ -14,7 +14,8 @@ export default function DeleteCalendar(props)
             {
                 res.json().then(message => 
                 {
-                    household = message.userHousehold;
+                    console.log(message);
+                    household = message.message;
                 })
             }
             else
@@ -29,7 +30,7 @@ export default function DeleteCalendar(props)
 
     function deleteCalendar()
     { 
-        console.log(household._id);
+        console.log(household);
         fetch(`/api/v1/houseHolds/${household._id}`,
         {
             method:'DELETE',
@@ -41,6 +42,7 @@ export default function DeleteCalendar(props)
             {
                 res.json().then(message => 
                 {
+                    console.log(message.message);
                     alert(`Success: ${message}`)
                 })
             }

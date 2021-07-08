@@ -44,26 +44,27 @@ var _nodeFetch = require('node-fetch');
 
 var _nodeFetch2 = _interopRequireDefault(_nodeFetch);
 
-var _array = require('lodash/array');
+var _nodemailer = require('nodemailer');
 
-var _array2 = _interopRequireDefault(_array);
+var _nodemailer2 = _interopRequireDefault(_nodemailer);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 require('dotenv').config();
 require('../passport-setup');
 var mongoose = require('mongoose');
+
 var port = process.env.PORT || 3000;
 //app.set('port', (process.env.PORT || 5000));
 _sourceMapSupport2.default.install();
 //INITIALIZE DB
-mongoose.connect('mongodb+srv://JonathanA:Alpha4086465832@roommatecluster.wjtg8.mongodb.net/Roommates?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true }).then(function (connection) {
+mongoose.connect('mongodb+srv://JonathanA:' + process.env.DBPASSWORD + '@roommatecluster.wjtg8.mongodb.net/Roommates?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true }).then(function (connection) {
     var server = app.listen(port, function () {
         console.log('app started on port ' + port);
         console.log('Database connected successfully');
     });
 
-    server.setTimeout(1200000000);
+    server.setTimeout(120000);
 }).catch(function (error) {
     console.log('ERROR when connecting:', error);
 });
@@ -97,11 +98,9 @@ var isAuthorized = function isAuthorized(houseHold) {
     }
 };
 
-app.post('/api/v1/createHousehold', isLoggedIn, function (req, res) {
-    var currentUser = void 0;
+app.post('/api/v1/households', isLoggedIn, function (req, res) {
     _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
-        currentUser = user;
-        if (currentUser.household) {
+        if (user.household) {
             res.status(500).json({ message: 'Users are only allowed to be a part of one household at a time' });
         } else {
             (0, _nodeFetch2.default)('https://www.googleapis.com/calendar/v3/calendars?key=' + process.env.APIKEY, {
@@ -119,8 +118,9 @@ app.post('/api/v1/createHousehold', isLoggedIn, function (req, res) {
                                 owner: user._id,
                                 members: [user]
                             }).then(function (newHousehold) {
-                                _User2.default.updateOne(queryFilter, { household: newHousehold._id }).then(function () {
-                                    res.status(200).json(newHousehold);
+                                req.session.passport.user.user.household = newHousehold._id;
+                                _User2.default.updateOne(queryFilter, { household: newHousehold._id }).then(function (update) {
+                                    res.status(200).json({ message: newHousehold });
                                 });
                             });
                         });
@@ -135,9 +135,26 @@ app.post('/api/v1/createHousehold', isLoggedIn, function (req, res) {
     });
 });
 
+app.get('/api/v1/households/public', isLoggedIn, function (req, res) {
+    _Household2.default.findById(req.session.passport.user.user.household).then(function (house) {
+        (0, _nodeFetch2.default)('https://www.googleapis.com/calendar/v3/calendars/' + house.calendarID + '/acl?key=' + process.env.APIKEY, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + req.session.passport.user.accessToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ "role": "reader", "scope": { "type": "default" } })
+        }).then(function (response) {
+            if (response.ok) {
+                res.status(200).json({ message: 'Success' });
+            } else {
+                res.status(500).json({ message: 'Problem making calendar public' });
+            }
+        }).catch(function (err) {
+            res.status(500).json({ message: err });
+        });
+    });
+});
+
 app.post('/api/v1/events', isLoggedIn, function (req, res) {
     _Household2.default.findById(req.session.passport.user.user.household).then(function (house) {
-        console.log(house);
         (0, _nodeFetch2.default)('https://www.googleapis.com/calendar/v3/calendars/' + house.calendarID + '/events?key=' + process.env.APIKEY, {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + req.session.passport.user.accessToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
@@ -159,11 +176,53 @@ app.post('/api/v1/events', isLoggedIn, function (req, res) {
 app.post('/api/v1/messages', isLoggedIn, function (req, res) {
     var message = req.body.messageBody;
     message.household = req.session.passport.user.user.household;
-    console.log(message);
     _Message2.default.create(message).then(function (newMessage) {
         res.status(200).json({ message: newMessage });
     }).catch(function (err) {
         res.status(500).json({ message: err });
+    });
+});
+
+app.post('/api/v1/invite/', isLoggedIn, function (req, res) {
+    if (req.session.passport.user.user.household) {
+        var transporter = _nodemailer2.default.createTransport({
+            service: 'gmail',
+            auth: { user: process.env.MAILUSER, pass: process.env.MAILPASS }
+        });
+
+        var mailOptions = {
+            from: process.env.MAILUSER,
+            to: 'jonathanaguayoalpha@gmail.com',
+            subject: 'Invitation to Room8tes household!',
+            text: 'Hi, ' + req.session.passport.user.user.firstName + ' ' + req.session.passport.user.user.lastName + ' is inviting to their house. Click here to join',
+            html: '<p> <a href="http://localhost:8000/home"> Hello </a> </p>'
+        };
+
+        transporter.sendMail(mailOptions, function (err, data) {
+            if (err) {
+                res.status(500).json({ message: err });
+            } else {
+                res.status(200).json({ message: 'Email sent successfully' });
+            }
+        });
+    } else {
+        res.status(501).json({ message: 'You must create a household before you can invite someone' });
+    }
+});
+
+app.get('/api/v1/user/', isLoggedIn, function (req, res) {
+    var resObject = {};
+    _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
+        resObject.user = user;
+        if (user.household && !user == null) {
+            _Household2.default.findById(user.household).then(function (house) {
+                resObject.household = house;
+                res.status(200).json({ message: resObject });
+            });
+        } else {
+            resObject.household = null;
+            res.status(200).json({ message: resObject });
+        }
     });
 });
 
@@ -182,27 +241,16 @@ app.get('/api/v1/messages', isLoggedIn, function (req, res) {
 
 app.get('/api/v1/houseHolds/:houseID', function (req, res) {
     _Household2.default.findById(req.params.houseID).then(function (houseHold) {
-        res.status(200).json(houseHold);xxxz;
+        res.status(200).json(houseHold);
     }).catch(function (err) {
         res.status(501).json({ 'message': err });
     });
 });
 
-app.get('/api/v1/users', isLoggedIn, function (req, res) {
-    _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
-        res.status(200).json(user);
-    }).catch(function (err) {
-        res.status(500).json(err);
-    });
-});
-
 app.get('/api/v1/houseHolds/', isLoggedIn, function (req, res) {
-    var userHousehold = void 0;
-
     _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
         _Household2.default.findById(user.household).then(function (house) {
-            userHousehold = house;
-            res.status(200).json({ message: userHousehold });
+            res.status(200).json({ message: house });
         });
     }).catch(function (err) {
         res.status(500).json({ message: err });
@@ -214,8 +262,11 @@ app.delete('/api/v1/houseHolds/:houseID', isLoggedIn, function (req, res) {
     _Household2.default.findById(req.params.houseID).then(function (houseHold) {
         if (houseHold.owner == req.session.passport.user.user._id) {
             _Household2.default.deleteOne({ _id: houseHold._id }).then(function () {
-                _User2.default.updateOne({ _id: req.session.passport.user.user._id }, { household: null }).then(function () {
-                    return res.status(200).json({ message: 'Household deleted successfully' });
+                _User2.default.updateOne({ _id: req.session.passport.user.user._id }, { household: null }).then(function (update) {
+                    req.session.passport.user.user.household = null;
+                    _Message2.default.deleteMany({ household: req.params.houseID }).then(function (deleted) {
+                        res.status(200).json({ message: req.session.passport.user.user });
+                    });
                 });
             });
         } else {
@@ -228,29 +279,33 @@ app.delete('/api/v1/houseHolds/:houseID', isLoggedIn, function (req, res) {
 });
 
 //GOOGLE OAUTH2.0 ROUTES
-app.get('/auth/loggedinonly', isLoggedIn, function (req, res) {
-    res.send('you are logged in!');
+app.get('/auth/google/', _passport2.default.authenticate('google', { scope: ['profile', 'email', 'https://www.googleapis.com/auth/calendar'] }));
+
+app.get('/auth/google/test', _passport2.default.authenticate('google', { scope: ['profile', 'email'] }), function (req, res) {
+    res.send('hello jonathan');
 });
-app.get('/auth/google', _passport2.default.authenticate('google', { scope: ['profile', 'email', 'https://www.googleapis.com/auth/calendar'] }));
 app.get('/api/v1/logout', function (req, res) {
     req.session = null;
     req.logout();
-    res.send(req.session);
     res.redirect('/');
 });
 app.get('/auth/google/failure', function (req, res) {
     res.send('Unable to login');
 });
-app.get('/auth/google/callback', _passport2.default.authenticate('google', {
+app.get('/auth/google/callback/', _passport2.default.authenticate('google', {
     successRedirect: '/auth/google/success',
     failureRedirect: '/auth/google/failure'
 }));
+
 app.get('/auth/google/success', function (req, res) {
     res.send(req.session.passport);
 });
+app.get('/auth/google/success/:house', function (req, res) {
+    res.send(req.params.house);
+});
 
 //Static page route
-app.get('*', function (req, res) {
+app.get('*', isLoggedIn, function (req, res) {
     res.sendFile(_path2.default.resolve('static/index.html'));
 });
 //# sourceMappingURL=server.js.map

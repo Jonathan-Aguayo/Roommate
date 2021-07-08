@@ -36,40 +36,11 @@ export class AddMessage extends React.Component
             postedOn: new Date(),
             completed: false,
         }
-        console.log(messageBody);
-        fetch('/api/v1/messages', {
-            method:'POST',
-            headers:{'Accept':'application/json','Content-Type':'application/json'},
-            body:JSON.stringify({'messageBody':messageBody}),
+        this.props.createMessage(messageBody);
+        this.setState({
+            title: '',
+            body: '',
         })
-        .then(res => 
-        {
-            if(res.ok)
-            {
-                res.json().then(message => 
-                {
-                    console.log(message);
-                    alert(`Success:${message}`)
-                })
-                this.setState({
-                    title: '',
-                    body: '',
-                })
-            }
-            else
-            {
-                res.json().then(message => 
-                {
-                    console.log(message);
-                    alert(`Error: ${message.message}`)
-                })
-            }
-        })
-        .catch(err => 
-        {
-            alert(`Error: ${err}`)
-        })
-
     }
 
     handleClose()

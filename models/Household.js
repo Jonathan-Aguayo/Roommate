@@ -11,6 +11,7 @@ const HouseHoldSchema = new mongoose.Schema({
     activeTasks: [mongodb.ObjectID],
     previousTasks:[mongodb.ObjectID],
     messages:[mongodb.ObjectID],
+    calendarIframe: ''
 });
 
 const HouseHold = mongoose.model('HouseHold', HouseHoldSchema);

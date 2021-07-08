@@ -25,7 +25,7 @@ passport.use(new GoogleStrategy({
         {
             if(!user)
             {
-               User.create({googleID: profile.id, firstName: profile.name.givenName, lastName: profile.name.familyName, email:profile.email, })
+               User.create({googleID: profile.id, firstName: profile.name.givenName, lastName: profile.name.familyName, email:profile.email, picture:profile.picture })
                .then( user => {
                    return done(null,{user,'accessToken': accessToken });
                })
