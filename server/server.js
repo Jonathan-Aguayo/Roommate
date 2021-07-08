@@ -366,7 +366,7 @@ app.get('/api/v1/logout', (req,res) =>
 app.get('/auth/google/failure',(req,res) => {res.send('Unable to login')});
 app.get( '/auth/google/callback/', 
     passport.authenticate( 'google', {
-    successRedirect: `/auth/google/success`,
+    successRedirect: `/`,
     failureRedirect: '/auth/google/failure'
     })
 );

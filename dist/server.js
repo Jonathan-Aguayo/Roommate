@@ -294,7 +294,7 @@ app.get('/auth/google/failure', function (req, res) {
     res.send('Unable to login');
 });
 app.get('/auth/google/callback/', _passport2.default.authenticate('google', {
-    successRedirect: '/auth/google/success',
+    successRedirect: '/',
     failureRedirect: '/auth/google/failure'
 }));
 
