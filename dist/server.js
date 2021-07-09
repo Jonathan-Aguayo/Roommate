@@ -193,10 +193,9 @@ app.post('/api/v1/invite/', isLoggedIn, function (req, res) {
 
         var mailOptions = {
             from: process.env.MAILUSER,
-            to: 'jonathanaguayoalpha@gmail.com',
+            to: req.body.To,
             subject: 'Invitation to Room8tes household!',
-            text: 'Hi, ' + req.session.passport.user.user.firstName + ' ' + req.session.passport.user.user.lastName + ' is inviting to their house. Click here to join',
-            html: '<p> <a href="http://localhost:8000/home"> Hello </a> </p>'
+            html: '<p> Hi, \n                    ' + req.session.passport.user.user.firstName + ' ' + req.session.passport.user.user.lastName + ' is inviting to their house. Click here to <a href="http://localhost:8000/auth/google?returnTo=/join">join </a> </p>\n                    enter this code to join household: ' + req.session.passport.user.user.household
         };
 
         transporter.sendMail(mailOptions, function (err, data) {
@@ -262,12 +261,37 @@ app.get('/api/v1/houseHolds/', isLoggedIn, function (req, res) {
     });
 });
 
+app.patch('/api/v1/houseHolds/:houseID', isLoggedIn, function (req, res) {
+    _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
+        if (user.household) {
+            res.status(500).json({ message: 'Users are only allowed to be a part of one household at a time' });
+        } else {
+            _Household2.default.findById(req.params.houseID, function (err, house) {
+                {
+                    if (err) {
+                        res.status(404).json({ message: 'Not a valid House Id' });
+                    } else {
+                        var updatedMembers = house.members;
+                        updatedMembers.push(user);
+                        _Household2.default.updateOne({ _id: house._id }, { members: updatedMembers }).then(function () {
+                            req.session.passport.user.user.household = house._id;
+                            _User2.default.updateOne({ _id: user._id }, { household: house._id }).then(function () {
+                                res.status(200).json({ message: 'success' });
+                            });
+                        });
+                    }
+                }
+            });
+        }
+    });
+});
+
 app.delete('/api/v1/houseHolds/:houseID', isLoggedIn, function (req, res) {
     console.log(req.params.houseID);
     _Household2.default.findById(req.params.houseID).then(function (houseHold) {
         if (houseHold.owner == req.session.passport.user.user._id) {
             _Household2.default.deleteOne({ _id: houseHold._id }).then(function () {
-                _User2.default.updateOne({ _id: req.session.passport.user.user._id }, { household: null }).then(function (update) {
+                _User2.default.updateMany({ household: houseHold._id }, { household: null }).then(function (update) {
                     req.session.passport.user.user.household = null;
                     _Message2.default.deleteMany({ household: req.params.houseID }).then(function (deleted) {
                         res.status(200).json({ message: req.session.passport.user.user });
@@ -284,19 +308,35 @@ app.delete('/api/v1/houseHolds/:houseID', isLoggedIn, function (req, res) {
 });
 
 //GOOGLE OAUTH2.0 ROUTES
-app.get('/auth/google/', _passport2.default.authenticate('google', { scope: ['profile', 'email', 'https://www.googleapis.com/auth/calendar'] }));
+app.get('/auth/google', function (req, res, next) {
+    var returnTo = req.query.returnTo;
+
+    var state = returnTo ? Buffer.from(returnTo).toString('base64') : undefined;
+    var authenticator = _passport2.default.authenticate('google', { scope: ['profile', 'email', 'https://www.googleapis.com/auth/calendar'], state: state });
+    authenticator(req, res, next);
+});
+
 app.get('/api/v1/logout', function (req, res) {
     req.session = null;
     req.logout();
     res.redirect('/');
 });
+
 app.get('/auth/google/failure', function (req, res) {
     res.send('Unable to login');
 });
-app.get('/auth/google/callback/', _passport2.default.authenticate('google', {
-    successRedirect: '/',
-    failureRedirect: '/auth/google/failure'
-}));
+app.get('/auth/google/callback/', _passport2.default.authenticate('google', { failureRedirect: '/auth/google/failure' }), function (req, res) {
+    try {
+        var state = req.query.state;
+        var returnTo = Buffer.from(state, 'base64').toString();
+        if (typeof returnTo === 'string' && returnTo.startsWith('/')) {
+            return res.redirect(returnTo);
+        }
+    } catch (error) {
+        //redirect normally
+    }
+    res.redirect('/auth/google/success');
+});
 
 app.get('/auth/google/success', function (req, res) {
     res.send(req.session.passport);

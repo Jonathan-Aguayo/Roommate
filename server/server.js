@@ -217,10 +217,11 @@ app.post('/api/v1/invite/', isLoggedIn, (req,res) =>
 
         let mailOptions = {
             from: process.env.MAILUSER,
-            to: 'jonathanaguayoalpha@gmail.com',
+            to: req.body.To,
             subject: 'Invitation to Room8tes household!',
-            text: `Hi, ${req.session.passport.user.user.firstName} ${req.session.passport.user.user.lastName} is inviting to their house. Click here to join`,
-            html: '<p> <a href="http://localhost:8000/home"> Hello </a> </p>'
+            html: `<p> Hi, 
+                    ${req.session.passport.user.user.firstName} ${req.session.passport.user.user.lastName} is inviting to their house. Click here to <a href="http://localhost:8000/auth/google?returnTo=/join">join </a> </p>
+                    enter this code to join household: ${req.session.passport.user.user.household}`
         }
 
         transporter.sendMail(mailOptions, (err, data) => 
@@ -322,6 +323,41 @@ app.get('/api/v1/houseHolds/', isLoggedIn, (req,res) =>
     })
 })
 
+app.patch('/api/v1/houseHolds/:houseID', isLoggedIn, (req,res) =>
+{
+    User.findById(req.session.passport.user.user._id).then(user =>
+    {
+        if(user.household)
+        {
+            res.status(500).json({message: 'Users are only allowed to be a part of one household at a time'})
+        }
+        else
+        {
+            HouseHold.findById(req.params.houseID, function(err,house) {
+            {
+                if(err)
+                {
+                    res.status(404).json({message: 'Not a valid House Id'});
+                }
+                else
+                {
+                    let updatedMembers = house.members;
+                    updatedMembers.push(user)
+                    HouseHold.updateOne({_id: house._id, }, {members: updatedMembers}).then( () => 
+                    {
+                        req.session.passport.user.user.household = house._id;
+                        User.updateOne({_id: user._id}, {household: house._id}).then( () => 
+                        {
+                            res.status(200).json({message:'success'});
+                        })
+                    })
+                }
+            }})
+        }
+    })
+    
+})
+
 app.delete('/api/v1/houseHolds/:houseID',isLoggedIn,(req,res) => 
 {
     console.log(req.params.houseID);
@@ -331,7 +367,7 @@ app.delete('/api/v1/houseHolds/:houseID',isLoggedIn,(req,res) =>
         {
             HouseHold.deleteOne({_id: houseHold._id}).then( () => 
             {
-                User.updateOne({_id:req.session.passport.user.user._id}, {household: null}).then(update =>
+                User.updateMany({household: houseHold._id}, {household: null}).then(update =>
                 {
                     req.session.passport.user.user.household = null;
                     Message.deleteMany({ household: req.params.houseID }).then(deleted=>
@@ -355,20 +391,39 @@ app.delete('/api/v1/houseHolds/:houseID',isLoggedIn,(req,res) =>
 })
 
 //GOOGLE OAUTH2.0 ROUTES
-app.get('/auth/google/', passport.authenticate('google', { scope:[ 'profile','email','https://www.googleapis.com/auth/calendar',] }
-));
+app.get('/auth/google', (req,res,next)=>
+{
+    const {returnTo} = req.query;
+    const state = returnTo ? Buffer.from(returnTo).toString('base64'): undefined
+    const authenticator = passport.authenticate('google', { scope:[ 'profile','email','https://www.googleapis.com/auth/calendar',], state: state});
+    authenticator(req,res,next);
+});
+
 app.get('/api/v1/logout', (req,res) =>
 {
-    req.session = null;
+    req.session = null; 
     req.logout();
     res.redirect('/');
 });
+
 app.get('/auth/google/failure',(req,res) => {res.send('Unable to login')});
-app.get( '/auth/google/callback/', 
-    passport.authenticate( 'google', {
-    successRedirect: `/`,
-    failureRedirect: '/auth/google/failure'
-    })
+app.get( '/auth/google/callback/', passport.authenticate( 'google', { failureRedirect: '/auth/google/failure' }), (req, res) =>
+    {
+        try
+        {
+            const state  = req.query.state
+            const returnTo = Buffer.from(state, 'base64').toString()
+            if (typeof returnTo === 'string' && returnTo.startsWith('/'))
+            {
+                return res.redirect(returnTo);
+            }
+        }
+        catch (error)
+        {
+            //redirect normally
+        }
+        res.redirect('/auth/google/success')
+    },
 );
 
 app.get('/auth/google/success',(req,res) => 

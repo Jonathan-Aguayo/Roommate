@@ -34,7 +34,6 @@ export default class Template extends React.Component
                     this.setState({
                         user: message.message.user,
                     })
-                    console.log(this.state.user);
                 })
             }   
             else

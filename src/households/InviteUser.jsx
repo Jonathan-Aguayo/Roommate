@@ -13,7 +13,7 @@ export default function InviteUser (props)
         {
             method:'POST',
             headers:{'Accept':'application/json','Content-Type':'application/json'},
-            body:JSON.stringify({'to':to}),
+            body:JSON.stringify({'To':to}),
         })
         .then(res => 
             {
@@ -27,7 +27,7 @@ export default function InviteUser (props)
                 {
                     res.json().then(message => 
                     {
-                        alert(`Error: ${message.message}`)
+                        alert(`bad: ${message.message}`)
                     })
                 }
             })
@@ -47,7 +47,6 @@ export default function InviteUser (props)
     const formChange = (e) => 
     {
         const bool = validateEmail(e);
-        console.log(bool);
         if(bool)
         {
             setTo(e);

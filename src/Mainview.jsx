@@ -6,6 +6,7 @@ import {Grid} from '@material-ui/core';
 import {Snackbar} from '@material-ui/core';
 import { SettingsInputComponentTwoTone } from '@material-ui/icons';
 import {Typography} from '@material-ui/core';
+import {Paper} from '@material-ui/core';
 
 
 export default class Home extends React.Component
@@ -63,7 +64,6 @@ export default class Home extends React.Component
             {
                 res.json().then(message => 
                 {
-                    console.log(message.message);
                     this.setState({messages: message.message});
                 })
             }
@@ -116,7 +116,6 @@ export default class Home extends React.Component
 
     render()
     {
-        console.log(this.state.iframeID)
         return(
             <div>
                 {this.state.user && this.state.household?
@@ -132,7 +131,9 @@ export default class Home extends React.Component
                             </Grid>
                         </Grid>
                         <Grid item xs= {6}>
-                            <iframe src={ `https://calendar.google.com/calendar/embed?src=${this.state.iframeID[0]}%40group.calendar.google.com& `}  width="1000" height="600" frameborder="0" scrolling="no"></iframe>
+                            <Paper style = {{overflow:'auto'}}>
+                                <iframe src={ `https://calendar.google.com/calendar/embed?src=${this.state.iframeID[0]}%40group.calendar.google.com& `}  width="950" height="600" frameBorder="0" scrolling="no"></iframe>
+                            </Paper>
                         </Grid>
                     </Grid>
                     :
