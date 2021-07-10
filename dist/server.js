@@ -195,7 +195,7 @@ app.post('/api/v1/invite/', isLoggedIn, function (req, res) {
             from: process.env.MAILUSER,
             to: req.body.To,
             subject: 'Invitation to Room8tes household!',
-            html: '<p> Hi, \n                    ' + req.session.passport.user.user.firstName + ' ' + req.session.passport.user.user.lastName + ' is inviting to their house. Click here to <a href="http://localhost:8000/auth/google?returnTo=/join">join </a> </p>\n                    enter this code to join household: ' + req.session.passport.user.user.household
+            html: '<p> Hi, \n                    ' + req.session.passport.user.user.firstName + ' ' + req.session.passport.user.user.lastName + ' is inviting to their house. Click here to <a href="https://roomies-1.herokuapp.com/auth/google?returnTo=/join">join </a> </p>\n                    enter this code to join household: ' + req.session.passport.user.user.household
         };
 
         transporter.sendMail(mailOptions, function (err, data) {
