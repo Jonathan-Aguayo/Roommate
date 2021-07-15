@@ -31,30 +31,12 @@ export class AddTask extends React.Component
             endDate: new Date(),
             title: '',
             body: '',
-            household:{members:[], calendarID: ''},
+            household: this.props.household,
             open: false,
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleClose = this.handleClose.bind(this);
         this.handleOpen = this.handleOpen.bind(this);
-    }
-
-    componentDidMount()
-    {
-        fetch('/api/v1/houseHolds/').then(res => 
-        {
-            if(res.ok)
-            {
-                res.json().then(message => 
-                {
-                    this.setState({household: message.message, })
-                })
-            }
-            else
-            {
-                res.json().then(message => { alert(`Error: ${message.message}`)})
-            }
-        })
     }
 
     handleSubmit(e)
@@ -125,7 +107,7 @@ export class AddTask extends React.Component
 
     render()
     {
-        let menuitems = this.state.household.members.map( (user,index) => <MenuItem value = {user.firstName} key = {index}> {user.firstName} </MenuItem>)
+        let menuitems = this.props.household.members.map( (user,index) => <MenuItem value = {user.firstName} key = {index}> {user.firstName} </MenuItem>)
         return(
         <div>
             <Button variant = 'outlined' onClick={this.handleOpen}>

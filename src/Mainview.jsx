@@ -5,7 +5,7 @@ import {AddMessage} from './messages/AddMessage.jsx'
 import {AddTask} from './households/AddTask.jsx'
 import {Grid} from '@material-ui/core';
 import {Snackbar} from '@material-ui/core';
-import { SettingsInputComponentTwoTone } from '@material-ui/icons';
+import { CardMedia } from '@material-ui/core';
 import {Typography} from '@material-ui/core';
 import {Paper} from '@material-ui/core';
 
@@ -16,11 +16,11 @@ export default class Home extends React.Component
     {
         super(props)
         this.state = {
-            household: {},
-            messages: new Array(),
-            tasks: new Array(),
-            user: {},
-            iframeID: '',
+            household: null,
+            messages: null,
+            tasks: null,
+            user: null,
+            iframeID: null,
 
         }
         this.createMessage = this.createMessage.bind(this);
@@ -37,7 +37,7 @@ export default class Home extends React.Component
                 {
                     this.setState({
                         user: message.message.user,
-                        household:null,
+                        household: null,
                         iframeID: null,
                     })
                     if(message.message.household)
@@ -47,14 +47,6 @@ export default class Home extends React.Component
                             iframeID: message.message.household.calendarID.split('@'),
                         })
                     }
-                })
-            }
-            else
-            {
-                this.setState({
-                    household: null, 
-                    user: null,
-                    iframeID: null,
                 })
             }
         })
@@ -67,14 +59,6 @@ export default class Home extends React.Component
                 {
                     this.setState({messages: message.message});
                 })
-            }
-            else
-            {
-                this.setState(
-                    {
-                        messages: null
-                    })
-                
             }
         })
     }
@@ -117,10 +101,11 @@ export default class Home extends React.Component
 
     render()
     {
+        console.log(this.state);
         return(
             <div>
                 {this.state.user && this.state.household?
-                    <Grid container spacing={1}>
+                    <Grid container justify='space-between' spacing={2}>
                         <Grid item xs= {5} container direction="column" spacing={1}>
                             <Grid item xs={9}>
                                 <ViewMessages messages={this.state.messages}/>
@@ -129,14 +114,12 @@ export default class Home extends React.Component
                                 <AddMessage createMessage = {this.createMessage}/>
                             </Grid>
                         </Grid>
-                        <Grid item xs= {7} container direction="column" spacing={1} alignContent='flex-end'>
-                            <Grid item xs={11}>
-                                <Paper style = {{overflow:'auto',width:'inherit'}}>
-                                    <iframe src={ `https://calendar.google.com/calendar/embed?src=${this.state.iframeID[0]}%40group.calendar.google.com& `}  width="1000" height="600" frameBorder="0" scrolling="no"></iframe>
-                                </Paper>
+                        <Grid item xs= {7} container direction="column" spacing={1}>
+                            <Grid item xs={11} style={{maxWidth:'100%'}}>
+                                <iframe src={ `https://calendar.google.com/calendar/embed?src=${this.state.iframeID[0]}%40group.calendar.google.com& `}  width="100%" height="600" frameBorder="0" scrolling="no"></iframe>
                             </Grid>
                             <Grid item xs={1}>
-                                <AddTask/>
+                                <AddTask household = {this.state.household}/>
                             </Grid>
                         </Grid>
                     </Grid>

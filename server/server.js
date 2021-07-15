@@ -211,30 +211,54 @@ app.post('/api/v1/invite/', isLoggedIn, (req,res) =>
 {
     if(req.session.passport.user.user.household)
     {
-        let transporter = nodemailer.createTransport({
-            service:'gmail',
-            auth: { user: process.env.MAILUSER, pass: process.env.MAILPASS},
-        })
-
-        let mailOptions = {
-            from: process.env.MAILUSER,
-            to: req.body.To,
-            subject: 'Invitation to Room8tes household!',
-            html: `<p> Hi, 
-                    ${req.session.passport.user.user.firstName} ${req.session.passport.user.user.lastName} is inviting to their house. Click here to <a href="https://roomies-1.herokuapp.com/auth/google?returnTo=/join">join </a> </p>
-                    enter this code to join household: ${req.session.passport.user.user.household}`
-        }
-
-        transporter.sendMail(mailOptions, (err, data) => 
+        HouseHold.findById(req.session.passport.user.user.household).then(house =>
         {
-            if(err)
+            fetch(`https://www.googleapis.com/calendar/v3/calendars/${house.calendarID}/acl?key=${process.env.APIKEY}`, 
+            {
+                method:'POST',
+                headers:{'Authorization':`Bearer ${req.session.passport.user.accessToken}`, 'Accept':'application/json','Content-Type':'application/json'},
+                body: JSON.stringify({"role":"writer","scope":{"type":"user", "value":req.body.To}}),
+            })
+            .then(response =>
+            {
+                if(response.ok)
+                {
+                    let transporter = nodemailer.createTransport({
+                    service:'gmail',
+                    auth: { user: process.env.MAILUSER, pass: process.env.MAILPASS},
+                    })
+
+                    let mailOptions = {
+                        from: process.env.MAILUSER,
+                        to: req.body.To,
+                        subject: 'Invitation to Room8tes household!',
+                        html: `<p> Hi, 
+                                ${req.session.passport.user.user.firstName} ${req.session.passport.user.user.lastName} is inviting to their house. Click here to <a href="https://roomies-1.herokuapp.com/auth/google?returnTo=/join">join </a> </p>
+                                enter this code to join household: ${req.session.passport.user.user.household}`
+                    }   
+
+                    transporter.sendMail(mailOptions, (err, data) => 
+                    {
+                        if(err)
+                        {
+                            res.status(500).json({message: err})
+                        }
+                        else
+                        {
+                            res.status(200).json({message: 'Email sent successfully'})
+                        }
+                    })
+
+                }
+                else
+                {
+                    res.status(500).json({message: 'Problem inviting user to calendar'})
+                }
+            })
+            .catch(err => 
             {
                 res.status(500).json({message: err})
-            }
-            else
-            {
-                res.status(200).json({message: 'Email sent successfully'})
-            }
+            })
         })
     }
     else
