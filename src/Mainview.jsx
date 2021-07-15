@@ -120,8 +120,8 @@ export default class Home extends React.Component
         return(
             <div>
                 {this.state.user && this.state.household?
-                    <Grid container spacing={0}>
-                        <Grid item xs= {4} container direction="column" spacing={1}>
+                    <Grid container spacing={1}>
+                        <Grid item xs= {5} container direction="column" spacing={1}>
                             <Grid item xs={9}>
                                 <ViewMessages messages={this.state.messages}/>
                             </Grid>
@@ -129,7 +129,7 @@ export default class Home extends React.Component
                                 <AddMessage createMessage = {this.createMessage}/>
                             </Grid>
                         </Grid>
-                        <Grid item xs= {7} container direction="column" spacing={1}>
+                        <Grid item xs= {7} container direction="column" spacing={1} alignContent='flex-end'>
                             <Grid item xs={11}>
                                 <Paper style = {{overflow:'auto',width:'inherit'}}>
                                     <iframe src={ `https://calendar.google.com/calendar/embed?src=${this.state.iframeID[0]}%40group.calendar.google.com& `}  width="1000" height="600" frameBorder="0" scrolling="no"></iframe>

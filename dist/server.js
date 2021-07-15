@@ -140,7 +140,7 @@ app.get('/api/v1/households/public', isLoggedIn, function (req, res) {
         (0, _nodeFetch2.default)('https://www.googleapis.com/calendar/v3/calendars/' + house.calendarID + '/acl?key=' + process.env.APIKEY, {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + req.session.passport.user.accessToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
-            body: JSON.stringify({ "role": "reader", "scope": { "type": "default" } })
+            body: JSON.stringify({ "role": "writer", "scope": { "type": "default" } })
         }).then(function (response) {
             if (response.ok) {
                 res.status(200).json({ message: 'Success' });
@@ -165,6 +165,7 @@ app.post('/api/v1/events', isLoggedIn, function (req, res) {
                     res.status(200).json({ 'message': message });
                 });
             } else {
+                console.dir();
                 res.status(501).json({ message: 'problem creating google calendar event' });
             }
         }).catch(function (err) {

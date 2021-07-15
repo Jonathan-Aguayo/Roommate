@@ -137,7 +137,7 @@ app.get('/api/v1/households/public', isLoggedIn, (req,res) =>
         {
             method:'POST',
             headers:{'Authorization':`Bearer ${req.session.passport.user.accessToken}`, 'Accept':'application/json','Content-Type':'application/json'},
-            body:JSON.stringify({"role":"reader","scope":{"type":"default"}}),
+            body:JSON.stringify({"role":"writer","scope":{"type":"default"}}),
         })
         .then(response => 
         {
@@ -178,6 +178,7 @@ app.post('/api/v1/events', isLoggedIn, (req,res) =>
             }
             else
             {
+                console.dir()
                 res.status(501).json({message:'problem creating google calendar event'});
             }
         })

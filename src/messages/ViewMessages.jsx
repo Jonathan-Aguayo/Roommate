@@ -24,10 +24,10 @@ export default function ViewMessages (props)
                     <Avatar alt={message.postedBy.firstName} src={message.postedBy.picture} />
                 </ListItemAvatar>
                 <ListItemText
+                style={{whiteSpace:'pre-line'}}
                 key={`${message._id}-text`}
-                primary={message.title}
-                secondary={message.body}
-                style={{overflow:'auto'}}/>
+                primary={`${message.title} ` }
+                secondary={`${message.body} \r\n -${new Date(message.postedOn).toDateString()}`}/>
             </ListItem>
             <Divider/>
             </div>)
