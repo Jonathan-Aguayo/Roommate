@@ -354,7 +354,7 @@ app.get('/auth/google/callback/', _passport2.default.authenticate('google', { fa
 });
 
 app.get('/auth/google/success', function (req, res) {
-    res.send(req.session.passport);
+    res.redirect('/');
 });
 app.get('/auth/google/success/:house', function (req, res) {
     res.send(req.params.house);

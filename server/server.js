@@ -453,7 +453,7 @@ app.get( '/auth/google/callback/', passport.authenticate( 'google', { failureRed
 
 app.get('/auth/google/success',(req,res) => 
 {
-    res.send(req.session.passport);
+    res.redirect('/')
 })
 app.get('/auth/google/success/:house',(req,res) => 
 {
