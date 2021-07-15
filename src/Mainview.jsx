@@ -2,6 +2,7 @@ import React from 'react';
 import 'whatwg-fetch';
 import ViewMessages from './messages/ViewMessages.jsx';
 import {AddMessage} from './messages/AddMessage.jsx'
+import {AddTask} from './households/AddTask.jsx'
 import {Grid} from '@material-ui/core';
 import {Snackbar} from '@material-ui/core';
 import { SettingsInputComponentTwoTone } from '@material-ui/icons';
@@ -119,21 +120,24 @@ export default class Home extends React.Component
         return(
             <div>
                 {this.state.user && this.state.household?
-                    <Grid container>
-                        <Grid item xs= {5} container direction="column" spacing={1}>
+                    <Grid container spacing={0}>
+                        <Grid item xs= {4} container direction="column" spacing={1}>
                             <Grid item xs={9}>
                                 <ViewMessages messages={this.state.messages}/>
                             </Grid>
-                            <Grid item xs={3} container spacing={1}>
-                                <Grid item xs={3}>
-                                    <AddMessage createMessage = {this.createMessage}/>
-                                </Grid>
+                            <Grid item xs={1}>
+                                <AddMessage createMessage = {this.createMessage}/>
                             </Grid>
                         </Grid>
-                        <Grid item xs= {6}>
-                            <Paper style = {{overflow:'auto'}}>
-                                <iframe src={ `https://calendar.google.com/calendar/embed?src=${this.state.iframeID[0]}%40group.calendar.google.com& `}  width="950" height="600" frameBorder="0" scrolling="no"></iframe>
-                            </Paper>
+                        <Grid item xs= {7} container direction="column" spacing={1}>
+                            <Grid item xs={11}>
+                                <Paper style = {{overflow:'auto',width:'inherit'}}>
+                                    <iframe src={ `https://calendar.google.com/calendar/embed?src=${this.state.iframeID[0]}%40group.calendar.google.com& `}  width="1000" height="600" frameBorder="0" scrolling="no"></iframe>
+                                </Paper>
+                            </Grid>
+                            <Grid item xs={1}>
+                                <AddTask/>
+                            </Grid>
                         </Grid>
                     </Grid>
                     :
