@@ -38,6 +38,7 @@ export default function JoinHouseHold(props)
         e.preventDefault();
         join();
         setHouseholdID('');
+        props.history.push({pathname: '/home'})
     }
 
 
