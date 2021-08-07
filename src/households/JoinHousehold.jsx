@@ -9,7 +9,7 @@ export default function JoinHouseHold(props)
 
     const join = () => 
     {
-        fetch(`/api/v1/houseHolds/${householdID}`, {
+        fetch(`/api/v1/houseHolds/addMembers`, {
             method:'PATCH',
             headers:{'Accept':'application/json',},
         })

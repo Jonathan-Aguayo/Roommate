@@ -157,6 +157,20 @@ app.get('/api/v1/households/public', isLoggedIn, (req,res) =>
     })
 })
 
+app.delete('/api/v1/houseHolds/group', isLoggedIn, (req, res) =>
+{
+    User.findById(req.session.passport.user.user._id).then( user =>
+    {
+        HouseHold.findById(user.household).then(house =>
+        
+        {
+            let updatedGroups = house.groups;
+            updatedGroups.filter( ( group, index ) => index == req.body.Index);
+            HouseHold.updateOne( { _id: house._id}, {  } )
+        })
+    })
+})
+
 app.post('/api/v1/events', isLoggedIn, (req,res) => 
 {
     HouseHold.findById(req.session.passport.user.user.household).then(house => 
@@ -178,14 +192,33 @@ app.post('/api/v1/events', isLoggedIn, (req,res) =>
             }
             else
             {
-                console.dir()
-                res.status(501).json({message:'problem creating google calendar event'});
+                res.status(501).json({message:response.body});
             }
         })
         .catch(err => 
         {
             res.status(500).json({message: err});
         })
+    })
+})
+
+app.post('/api/v1/households/groups', isLoggedIn, (req,res) =>
+{
+    User.findById(req.session.passport.user.user._id).then(user =>
+    {
+        HouseHold.findById(user.household).then(house =>
+        {
+            let updatedGroups = house.groups;
+            updatedGroups.push(req.body.newGroup);
+            HouseHold.updateOne({ _id: house._id }, { groups: updatedGroups }).then(() =>
+            {
+                res.status(200).json({message: 'nice'});
+            })
+        })
+    })
+    .catch(err =>
+    {
+        res.status(500).json({ message: err})
     })
 })
 
@@ -213,11 +246,12 @@ app.post('/api/v1/invite/', isLoggedIn, (req,res) =>
     {
         HouseHold.findById(req.session.passport.user.user.household).then(house =>
         {
+            console.dir(house);
             fetch(`https://www.googleapis.com/calendar/v3/calendars/${house.calendarID}/acl?key=${process.env.APIKEY}`, 
             {
                 method:'POST',
                 headers:{'Authorization':`Bearer ${req.session.passport.user.accessToken}`, 'Accept':'application/json','Content-Type':'application/json'},
-                body: JSON.stringify({"role":"writer","scope":{"type":"user", "value":req.body.To}}),
+                body: JSON.stringify({"role":"writer","scope":{"type":"user", "value": req.body.To}}),
             })
             .then(response =>
             {
@@ -324,13 +358,13 @@ app.get('/api/v1/messages', isLoggedIn, (req,res) =>
 app.get('/api/v1/houseHolds/:houseID', (req,res) => 
 {
     HouseHold.findById(req.params.houseID).then(houseHold => 
-        {
-            res.status(200).json(houseHold);
-        })
-        .catch(err => 
-        {
-            res.status(501).json({'message': err})
-        })
+    {
+        res.status(200).json(houseHold);
+    })
+    .catch(err => 
+    {
+        res.status(501).json({'message': err})
+    })
 })
 
 app.get('/api/v1/houseHolds/', isLoggedIn, (req,res) => 
@@ -348,7 +382,7 @@ app.get('/api/v1/houseHolds/', isLoggedIn, (req,res) =>
     })
 })
 
-app.patch('/api/v1/houseHolds/:houseID', isLoggedIn, (req,res) =>
+app.patch('/api/v1/houseHolds/addMembers', isLoggedIn, (req,res) =>
 {
     User.findById(req.session.passport.user.user._id).then(user =>
     {
@@ -358,7 +392,7 @@ app.patch('/api/v1/houseHolds/:houseID', isLoggedIn, (req,res) =>
         }
         else
         {
-            HouseHold.findById(req.params.houseID, function(err,house) {
+            HouseHold.findById(user.household, function(err,house) {
             {
                 if(err)
                 {
@@ -381,6 +415,38 @@ app.patch('/api/v1/houseHolds/:houseID', isLoggedIn, (req,res) =>
         }
     })
     
+})
+
+app.patch('/api/v1/houseHolds/Chore', isLoggedIn, (req,res) =>
+{
+   User.findById(req.session.passport.user.user._id).then(user =>
+    {
+        if(user.household)
+        {
+            HouseHold.findById(user.household).then(house =>
+            {
+                let updatedChores = house.chores;
+                updatedChores.push(req.body.Chore);
+                HouseHold.updateOne({ _id: house._id }, { chores: updatedChores }).then( () =>
+                {
+                    res.status(200).json({message: updatedChores});
+                })
+            })
+        }
+        else
+        {
+            res.status(500).json({message: 'Join house to add chores'})
+        }
+    }) 
+})
+
+app.post('/api/v1/househHolds/assignChores', isLoggedIn, (req,res) => 
+{
+
+    Promise.all(promisesArray).then( values => 
+        {
+            console.dir(values);
+        })
 })
 
 app.delete('/api/v1/houseHolds/:houseID',isLoggedIn,(req,res) => 
@@ -409,10 +475,10 @@ app.delete('/api/v1/houseHolds/:houseID',isLoggedIn,(req,res) =>
         
     })
     .catch(err => 
-        {
-            console.log(err);
-            res.status(500).json({message: err})
-        })
+    {
+        console.log(err);
+        res.status(500).json({message: err})
+    })
 })
 
 //GOOGLE OAUTH2.0 ROUTES

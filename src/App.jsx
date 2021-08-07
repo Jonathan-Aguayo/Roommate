@@ -18,7 +18,9 @@ import Mainview from './Mainview.jsx'
 import InviteUser from './households/InviteUser.jsx'
 import Public from './households/Public.jsx'
 import JoinHouseHold from './households/JoinHousehold.jsx'
-
+import CreateGroup from './households/CreateGroup.jsx'
+import AddChore from './households/addChore.jsx'
+import AssignChores from './households/AssignChores.jsx'
 const contentNode = document.getElementById('contents');
 const NoMatch = () => <p>Page Not Found</p>
 
@@ -35,7 +37,10 @@ const RoutedApp = () =>(
             <Route path='/join' component={JoinHouseHold}/>
             <Route path='/invite' component={InviteUser}/>
             <Route path='/createHousehold' component={CreateCalendar}/>
+            <Route path='/createGroup' component={CreateGroup}/>
             <Route exact path='/addTask' component={AddTask}/>
+            <Route exact path='/assign' component={AssignChores}/>
+            <Route exact path='/addChore' component={AddChore}/>
             <Route exact path='/addMessage' component={AddMessage}/>
             <Route path='*' component={NoMatch}></Route>
         </Switch>

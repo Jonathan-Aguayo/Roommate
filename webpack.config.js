@@ -35,7 +35,13 @@ module.exports = {
       '/auth/*': {target:'http://localhost:3000'},
     }
   },
-  plugins:[],
+  plugins:[
+    new CopyWebpackPlugin({
+      patterns:[
+        {from:''}
+      ]
+    })
+  ],
   module:
   {
     rules: [

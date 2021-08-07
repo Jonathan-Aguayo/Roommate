@@ -153,6 +153,18 @@ app.get('/api/v1/households/public', isLoggedIn, function (req, res) {
     });
 });
 
+app.delete('/api/v1/houseHolds/group', isLoggedIn, function (req, res) {
+    _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
+        _Household2.default.findById(user.household).then(function (house) {
+            var updatedGroups = house.groups;
+            updatedGroups.filter(function (group, index) {
+                return index == req.body.Index;
+            });
+            _Household2.default.updateOne({ _id: house._id }, {});
+        });
+    });
+});
+
 app.post('/api/v1/events', isLoggedIn, function (req, res) {
     _Household2.default.findById(req.session.passport.user.user.household).then(function (house) {
         (0, _nodeFetch2.default)('https://www.googleapis.com/calendar/v3/calendars/' + house.calendarID + '/events?key=' + process.env.APIKEY, {
@@ -165,12 +177,25 @@ app.post('/api/v1/events', isLoggedIn, function (req, res) {
                     res.status(200).json({ 'message': message });
                 });
             } else {
-                console.dir();
-                res.status(501).json({ message: 'problem creating google calendar event' });
+                res.status(501).json({ message: response.body });
             }
         }).catch(function (err) {
             res.status(500).json({ message: err });
         });
+    });
+});
+
+app.post('/api/v1/households/groups', isLoggedIn, function (req, res) {
+    _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
+        _Household2.default.findById(user.household).then(function (house) {
+            var updatedGroups = house.groups;
+            updatedGroups.push(req.body.newGroup);
+            _Household2.default.updateOne({ _id: house._id }, { groups: updatedGroups }).then(function () {
+                res.status(200).json({ message: 'nice' });
+            });
+        });
+    }).catch(function (err) {
+        res.status(500).json({ message: err });
     });
 });
 
@@ -188,6 +213,7 @@ app.post('/api/v1/messages', isLoggedIn, function (req, res) {
 app.post('/api/v1/invite/', isLoggedIn, function (req, res) {
     if (req.session.passport.user.user.household) {
         _Household2.default.findById(req.session.passport.user.user.household).then(function (house) {
+            console.dir(house);
             (0, _nodeFetch2.default)('https://www.googleapis.com/calendar/v3/calendars/' + house.calendarID + '/acl?key=' + process.env.APIKEY, {
                 method: 'POST',
                 headers: { 'Authorization': 'Bearer ' + req.session.passport.user.accessToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
@@ -276,12 +302,12 @@ app.get('/api/v1/houseHolds/', isLoggedIn, function (req, res) {
     });
 });
 
-app.patch('/api/v1/houseHolds/:houseID', isLoggedIn, function (req, res) {
+app.patch('/api/v1/houseHolds/addMembers', isLoggedIn, function (req, res) {
     _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
         if (user.household) {
             res.status(500).json({ message: 'Users are only allowed to be a part of one household at a time' });
         } else {
-            _Household2.default.findById(req.params.houseID, function (err, house) {
+            _Household2.default.findById(user.household, function (err, house) {
                 {
                     if (err) {
                         res.status(404).json({ message: 'Not a valid House Id' });
@@ -298,6 +324,29 @@ app.patch('/api/v1/houseHolds/:houseID', isLoggedIn, function (req, res) {
                 }
             });
         }
+    });
+});
+
+app.patch('/api/v1/houseHolds/Chore', isLoggedIn, function (req, res) {
+    _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
+        if (user.household) {
+            _Household2.default.findById(user.household).then(function (house) {
+                var updatedChores = house.chores;
+                updatedChores.push(req.body.Chore);
+                _Household2.default.updateOne({ _id: house._id }, { chores: updatedChores }).then(function () {
+                    res.status(200).json({ message: updatedChores });
+                });
+            });
+        } else {
+            res.status(500).json({ message: 'Join house to add chores' });
+        }
+    });
+});
+
+app.post('/api/v1/househHolds/assignChores', isLoggedIn, function (req, res) {
+
+    Promise.all(promisesArray).then(function (values) {
+        console.dir(values);
     });
 });
 

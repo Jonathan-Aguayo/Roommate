@@ -27,7 +27,7 @@ export default function InviteUser (props)
                 {
                     res.json().then(message => 
                     {
-                        alert(`bad: ${message.message}`)
+                        alert(`Error: ${message.message}`)
                     })
                 }
             })

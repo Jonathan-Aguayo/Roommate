@@ -56,7 +56,6 @@ export class AddTask extends React.Component
             'summary':form.summary.value,
             'description':form.description.value,
         }
-        console.log(eventBody);
         fetch('/api/v1/events', {
             method:'POST',
             headers:{'Accept':'application/json','Content-Type':'application/json'},

@@ -8,6 +8,8 @@ import {Snackbar} from '@material-ui/core';
 import { CardMedia } from '@material-ui/core';
 import {Typography} from '@material-ui/core';
 import {Paper} from '@material-ui/core';
+import CreateGroup from './households/CreateGroup.jsx';
+import AssignChores from './households/AssignChores.jsx'
 
 
 export default class Home extends React.Component
@@ -97,15 +99,13 @@ export default class Home extends React.Component
 
     }
 
-    
 
     render()
     {
-        console.log(this.state);
         return(
             <div>
                 {this.state.user && this.state.household?
-                    <Grid container justify='space-between' spacing={2}>
+                    <Grid container justify='space-between' spacing={1}>
                         <Grid item xs= {5} container direction="column" spacing={1}>
                             <Grid item xs={9}>
                                 <ViewMessages messages={this.state.messages}/>
@@ -115,8 +115,8 @@ export default class Home extends React.Component
                             </Grid>
                         </Grid>
                         <Grid item xs= {7} container direction="column" spacing={1}>
-                            <Grid item xs={11} style={{maxWidth:'100%'}}>
-                                <iframe src={ `https://calendar.google.com/calendar/embed?src=${this.state.iframeID[0]}%40group.calendar.google.com& `}  width="100%" height="600" frameBorder="0" scrolling="no"></iframe>
+                            <Grid item xs={10} style={{maxWidth:'100%'}}>
+                                <iframe src={ `https://calendar.google.com/calendar/embed?src=${this.state.iframeID[0]}%40group.calendar.google.com&ctz=America%2FLos_Angeles `}  width="100%" height="700" frameBorder="0" scrolling="no"></iframe>
                             </Grid>
                             <Grid item xs={1}>
                                 <AddTask household = {this.state.household}/>
