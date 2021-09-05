@@ -14,21 +14,25 @@ import IconButton from '@material-ui/core/IconButton';
 import Avatar from '@material-ui/core/Avatar';
 import {Button, Typography} from '@material-ui/core';
 import {Delete} from '@material-ui/icons';
+
 const useStyles = makeStyles((theme) => ({
   root: {
     margin: 'auto',
     width: '100%',
-    maxWidth: 360,
     backgroundColor: theme.palette.background.paper,
   },
   paper: {
-    width: 200,
-    height: 230,
+    width: 250,
+    Maxheight: 400,
+    minHeight: 250,
     overflow: 'auto',
   },
   button: {
     margin: theme.spacing(0.5, 0),
   },
+  gridItem:{
+    flexBasis:0,
+  }
 }));
 
 function not(a, b) {
@@ -70,7 +74,7 @@ export default function TransferList(props) {
 
   const handleCheckedLeft = () => {
     setMembers(members.concat(rightChecked));
-    setNewGroupt(not(newGroup, rightChecked));
+    setNewGroup(not(newGroup, rightChecked));
     setChecked(not(checked, rightChecked));
   };
 
@@ -81,29 +85,36 @@ export default function TransferList(props) {
 
   const handleSubmit = (e) =>
   {
-    e.preventDefault();
-    fetch('/api/v1/households/groups', {
-    method: 'POST',
-    headers: {'Accept':'application/json','Content-Type':'application/json'},
-    body: JSON.stringify({'newGroup': newGroup}),
-    }).then(res =>
+    if(newGroup.length > 0)
     {
-      console.log(res);
-      if(res.ok)
+      e.preventDefault();
+      fetch('/api/v1/households/groups', {
+      method: 'POST',
+      headers: {'Accept':'application/json','Content-Type':'application/json'},
+      body: JSON.stringify({'newGroup': newGroup}),
+      }).then(res =>
       {
-        res.json().then(message =>
+        console.log(res);
+        if(res.ok)
         {
-          alert('Success');
-        })
-      }
-      else
-      {
-        console.log('No');
-        alert('No');
-      }
-      setNewGroup([]);
-      setMembers(props.household.members);
-    })
+          res.json().then(message =>
+          {
+            alert('Success');
+          })
+        }
+        else
+        {
+          console.log('No');
+          alert('No');
+        }
+        setNewGroup([]);
+        setMembers(props.household.members);
+      })
+    }
+    else
+    {
+      alert('Cannot create empty group')
+    }
   }
 
   const customList = (users) => (
@@ -136,14 +147,15 @@ export default function TransferList(props) {
   return (
     <Grid
       container
-      spacing={2}
-      alignItems="center"
-      className={classes.root}
+      direction="row"
+      alignItems="flex-end"
+      justify="space-evenly"
     >
-      <Grid item>All Members{customList(members)}</Grid>
-      <Grid item>
-        <Grid container direction="column" alignItems="center">
-
+      <Grid item xs ={3} className = {classes.gridItem}>
+        <Typography>All Members</Typography>
+        {customList(members)}
+      </Grid>
+        <Grid item xs ={1} container direction="column" alignItems="center" className = {classes.gridItem}>
           <Button
             variant="outlined"
             size="small"
@@ -175,16 +187,43 @@ export default function TransferList(props) {
             ≪
           </Button>
         </Grid>
+
+      <Grid 
+        item xs = {3} 
+        className = {classes.gridItem}
+        container 
+        direction = "column"
+        >
+        <Typography>New Group</Typography>
+        {customList(newGroup)}
+        <Button value = 'submit' type='submit' onClick={handleSubmit} variant='contained' style={{MarginTop:5}}>Create Group</Button>
       </Grid>
-      <Grid item>New Group{customList(newGroup)}</Grid>
-      <Grid item> 
-        <List className={classes.root}>
+
+      <Grid item xs={3} className = {classes.gridItem}> 
+        <Typography>Existing Groups</Typography>
+        <Paper className={ classes.paper }>
+          <List className={ classes.root }>
           {existing.map((group, index) => (
             <li key={`section-${index}`}>
               <ul>
                 <ListSubheader>
-                  <Typography>{`T${index +1}`}                     
-                    <IconButton>
+                  <Typography>{`Group ${index + 1}`}                     
+                    <IconButton onClick={() =>
+                      {
+                        const updatedGroups = existing.filter(group => existing.indexOf(group)!=index);
+                        fetch('/api/v1/houseHolds/group',
+                        {
+                          method: "PUT",
+                          headers:{'Accept':'application/json','Content-Type':'application/json'},
+                          body:JSON.stringify({ 'groups' : updatedGroups})
+                        }).then(res =>
+                          {
+                            if(res.ok)
+                            {
+                              setExisting(updatedGroups);
+                            }
+                          })
+                      }}>
                       <Delete fontSize='small'/>
                     </IconButton>
                   </Typography>
@@ -201,8 +240,8 @@ export default function TransferList(props) {
             </li>
           ))}
         </List>
+        </Paper>
       </Grid>
-      <Grid item><Button value = 'submit' type='submit' onClick={handleSubmit}>Submit</Button></Grid>
     </Grid>
   );
 }

@@ -35,7 +35,9 @@ module.exports = {
       '/auth/*': {target:'http://localhost:3000'},
     }
   },
-  plugins:[  ],
+  plugins:[ 
+
+   ],
   module:
   {
     rules: [

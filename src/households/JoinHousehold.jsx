@@ -11,7 +11,8 @@ export default function JoinHouseHold(props)
     {
         fetch(`/api/v1/houseHolds/addMembers`, {
             method:'PATCH',
-            headers:{'Accept':'application/json',},
+            headers:{'Accept':'application/json', 'Content-Type':'application/json'},
+            body: JSON.stringify({'houseID': householdID}),
         })
         .then(res =>
         {

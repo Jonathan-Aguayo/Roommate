@@ -2,6 +2,8 @@ import React from 'react';
 import 'whatwg-fetch';
 import {Button} from '@material-ui/core';
 import {TextField} from '@material-ui/core';
+import {Typography} from '@material-ui/core';
+import {Grid} from '@material-ui/core';
 
 
 export default function CreateCalendar (props)
@@ -24,10 +26,33 @@ export default function CreateCalendar (props)
             {   
                 res.json().then(house => 
                 {
-                    console.log(house);
-                    houseID = house.calendarID;
-                    makeCalendarPublic();
+                    houseID = house.message.calendarID
+                    console.log(houseID);
+                    makeCalendarPublic(house.message._id);
                 })
+            }
+            else
+            {
+                res.json().then(message => 
+                {
+                    alert(`Error: ${message.message}`)
+                })
+            }
+        })
+        .catch(err => 
+            {
+                alert(`Error: ${err.message}`)
+            }) 
+    }
+
+    const makeCalendarPublic= (houseID) => 
+    {
+        fetch(`/api/v1/households/public/${houseID}`)
+        .then(res => 
+        {
+            if(res.ok)
+            {
+                alert('Success');
             }
             else
             {
@@ -43,29 +68,6 @@ export default function CreateCalendar (props)
             })
     }
 
-    const makeCalendarPublic= () => 
-    {
-        fetch('/api/v1/households/public')
-            .then(res => 
-            {
-                if(res.ok)
-                {
-                    alert('Success');
-                }
-                else
-                {
-                    res.json().then(message => 
-                    {
-                        alert(`Error: ${message.message}`)
-                    })
-                }
-            })
-            .catch(err => 
-                {
-                    alert(`Error: ${err.message}`)
-                })
-    }
-
     const handleSubmit = (e) => 
     {
         e.preventDefault();
@@ -73,12 +75,14 @@ export default function CreateCalendar (props)
     }
     
     return(
-        <div>
+        <Grid container justify= 'space-between' direction ='column'>
             <form noValidate onSubmit={handleSubmit}> 
+                <Typography> Create Household</Typography>
                 <TextField id = 'houseName' label='Enter house name' onChange = {(event) => {setHouseName(event.target.value)}}/>
                 <Button type='submit'>Submit</Button>
             </form>
-        </div>
+        </Grid>
+
 
     );
 }

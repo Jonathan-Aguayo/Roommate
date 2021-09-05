@@ -16,12 +16,11 @@ import {Button} from '@material-ui/core';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
+import { AddCircleTwoTone } from '@material-ui/icons';
+import { IconButton } from '@material-ui/core';
 
 export class AddTask extends React.Component
 {
-    /*
-        Algo where put all household members in an array and use modulo to select different members from the array so that chores get assigned randomly and will hopefully not put too many chores on any two people
-    */
    //State
     constructor(props)
     {
@@ -82,7 +81,7 @@ export class AddTask extends React.Component
             {
                 res.json().then(message => 
                 {
-                    console.log(message);
+                    console.log(message.message);
                     alert(`Error: ${message.message}`)
                 })
             }
@@ -109,9 +108,9 @@ export class AddTask extends React.Component
         let menuitems = this.props.household.members.map( (user,index) => <MenuItem value = {user.firstName} key = {index}> {user.firstName} </MenuItem>)
         return(
         <div>
-            <Button variant = 'outlined' onClick={this.handleOpen}>
-                Add Task
-            </Button>
+            <IconButton variant = 'outlined' onClick={this.handleOpen}>
+                <AddCircleTwoTone style={{color:'#58a7ed', fontSize:40}}/>
+            </IconButton>
             <Dialog onClose = {this.handleClose} open={this.state.open}>
                 <DialogTitle id="simple-dialog-title">Add Task</DialogTitle>
                 <form noValidate autoComplete='off' name='addEvent' style={{ padding: '25px' }}>

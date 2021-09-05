@@ -17,6 +17,7 @@ import MoreIcon from '@material-ui/icons/MoreVert';
 import {Button} from '@material-ui/core'
 import 'whatwg-fetch';
 import {Link} from '@material-ui/core';
+import { UserContext } from '../src/App.jsx';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -86,6 +87,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function PrimarySearchAppBar(props) {
+  const {user, setUser} = React.useContext(UserContext);
   const classes = useStyles();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = React.useState(null);
@@ -101,19 +103,13 @@ export default function PrimarySearchAppBar(props) {
   const handleMobileMenuClose = () => {
     setMobileMoreAnchorEl(null);
   };
-
-  const handleSignOut = () => 
-  {
-    fetch('/api/v1/logout');
-  }
-
+  
   const handleMenuClose = () => {
     setAnchorEl(null);
     handleMobileMenuClose();
   };
 
   const handleMobileMenuOpen = (event) => {
-    console.log(props);
     setMobileMoreAnchorEl(event.currentTarget);
   };
 
@@ -129,11 +125,10 @@ export default function PrimarySearchAppBar(props) {
       onClose={handleMenuClose}
     >
       {
-        props.user.firstName?
+        user?.user?
         <div>
-          <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-          <MenuItem onClick={handleMenuClose}>My account</MenuItem>
-          <MenuItem onClick={handleSignOut}><Link href='/home' underline='none' color='inherit'>Sign out</Link></MenuItem>
+          <MenuItem onClick={handleMenuClose}><Link href='/settings' underline='none' color='inherit'>My account</Link></MenuItem>
+          <MenuItem><Link href ='/api/v1/logout' underline='none' color='inherit'>Sign out</Link></MenuItem>
         </div>
         :
         <MenuItem><Link href='/auth/google/' color='inherit' underline='none'>Sign in</Link></MenuItem>
@@ -154,7 +149,7 @@ export default function PrimarySearchAppBar(props) {
       onClose={handleMobileMenuClose}
     >
       {
-        props.user.firstName?
+        user?.user?
         <MenuItem onClick={handleProfileMenuOpen}>
         <IconButton
           aria-label="account of current user"
@@ -163,10 +158,10 @@ export default function PrimarySearchAppBar(props) {
           color="inherit"
         >
         <Avatar 
-        alt={props.user.firstName}
-        src={props.user.picture}/>
+        alt={user.user.firstName}
+        src={user.user.picture}/>
         </IconButton>
-        <p>{props.user.firstName}</p>
+        <p>{user.user.firstName}</p>
       </MenuItem>
       :
       <MenuItem onClick={handleProfileMenuOpen}>
@@ -186,7 +181,7 @@ export default function PrimarySearchAppBar(props) {
 
   return (
     <div className={classes.grow}>
-      <AppBar position="static">
+      <AppBar position="static" style={{backgroundColor:'#0072B5'}}>
         <Toolbar>
           <a style = {{textDecoration: 'none', color: 'white'}} href='/'>
             <h1>Roommates</h1>
@@ -194,10 +189,10 @@ export default function PrimarySearchAppBar(props) {
           <div className={classes.grow} />
           <div className={classes.sectionDesktop}>
             {
-              props.user.firstName?
+              user?.user?
               <Typography style={{margin: 'auto'}}>
                {
-                  props.user.firstName
+                 user.user.firstName
                 } 
               </Typography>
               :
@@ -213,8 +208,8 @@ export default function PrimarySearchAppBar(props) {
               color="inherit"
             >
               <Avatar 
-              alt={props.user.firstName}
-              src={props.user.picture}/>
+              alt={user?.user?.firstName}
+              src={user?.user?.picture}/>
               
             </IconButton>
           </div>

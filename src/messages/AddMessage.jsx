@@ -1,11 +1,8 @@
 import React from 'react';
 import 'whatwg-fetch';
-import {TextField} from '@material-ui/core';
+import {TextField, Typography} from '@material-ui/core';
 import {Button} from '@material-ui/core';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-
+import { Grid } from '@material-ui/core';
 export class AddMessage extends React.Component
 {
     /*
@@ -23,6 +20,41 @@ export class AddMessage extends React.Component
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleClose = this.handleClose.bind(this);
         this.handleOpen = this.handleOpen.bind(this);
+        this.createMessage = this.createMessage.bind(this);
+    }
+
+    createMessage(message)
+    {
+        fetch('/api/v1/messages', {
+            method:'POST',
+            headers:{'Accept':'application/json','Content-Type':'application/json'},
+            body:JSON.stringify({'messageBody':message}),
+        })
+        .then(res => 
+        {
+            if(res.ok)
+            {
+                res.json().then(message => 
+                {
+                    const newMessages = messages;
+                    newMessages.push(message.message);
+                    setMessages(newMessages);
+                    alert(`Success:${message}`);
+                })
+            }
+            else
+            {
+                res.json().then(message => 
+                {
+                    alert(`Error: ${message.message}`)
+                })
+            }
+        })
+        .catch(err => 
+        {
+            alert(`Error: ${err}`)
+        })
+
     }
 
     handleSubmit(e)
@@ -36,10 +68,11 @@ export class AddMessage extends React.Component
             postedOn: new Date(),
             completed: false,
         }
-        this.props.createMessage(messageBody);
+        this.createMessage(messageBody);
         this.setState({
             title: '',
             body: '',
+            open: false,
         })
     }
 
@@ -56,23 +89,20 @@ export class AddMessage extends React.Component
     render()
     {
         return(
-        <div>
-            <Button variant = 'outlined' onClick={this.handleOpen}>
-                Add Message
-            </Button>
-            <Dialog onClose = {this.handleClose} open={this.state.open} style={{maxWidth: 'false'}}>
-                <DialogTitle id="simple-dialog-title">Add Message</DialogTitle>
-                <form noValidate autoComplete='off' name='addMessage' style={{ padding: '25px', maxWidth: 'false'}}>
-                    <TextField
-                    id="title"
-                    label="Message Title"
-                    fullWidth
-                    multiline
-                    name='title'
-                    rowsMax={2}
-                    value={this.state.title}
-                    onChange={ (event) => {this.setState({title: event.target.value})} } 
-                    style={{ paddingTop: '10px' }}/>
+            <Grid container direction ='column' style={{padding: '10px', background:'#e6e9eb'}}>
+                <form noValidate autoComplete='off' name='addMessage'>
+                    <Grid item>
+                        <TextField
+                        id="title"
+                        label="Message Title"
+                        fullWidth
+                        multiline
+                        name='title'
+                        rowsMax={2}
+                        value={this.state.title}
+                        onChange={ (event) => {this.setState({title: event.target.value})} } 
+                        style={{ paddingTop: '10px' }}/>
+                    </Grid>
                     <TextField
                     id="body"
                     label="Message body"
@@ -83,11 +113,10 @@ export class AddMessage extends React.Component
                     value={this.state.body}
                     onChange={ (event) => {this.setState({body: event.target.value})} } 
                     style={{ paddingTop: '10px' }}/>
-                    <DialogActions style={{  }}>
-                        <Button value='submit' type='submit' onClick={this.handleSubmit} style={{verticalAlign:'bottom', }}>Submit</Button>
-                    </DialogActions>
+                    <Grid container justify="flex-end">
+                        <Button value='submit' type='submit' variant = 'outlined'onClick={this.handleSubmit} style={{verticalAlign:'bottom', marginTop:'5px'}}>Add message</Button>
+                    </Grid>
                 </form>
-            </Dialog>
-        </div>)
+            </Grid>)
     }
 }

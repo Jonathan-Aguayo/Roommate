@@ -1,6 +1,6 @@
 import React from 'react';
 import 'whatwg-fetch';
-import {TextField} from '@material-ui/core';
+import {DialogContentText, TextField} from '@material-ui/core';
 import {Button, Typography} from '@material-ui/core';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -23,6 +23,9 @@ import Queue from '../Queue';
 import Backdrop from '@material-ui/core/Backdrop';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { makeStyles } from '@material-ui/core/styles';
+import Checkbox from '@material-ui/core/Checkbox';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+
 
 
 const useStyles = makeStyles((theme) => ({
@@ -35,16 +38,102 @@ const useStyles = makeStyles((theme) => ({
 export default function AssignChores(props)
 {
     const classes = useStyles();
-
     const [ weekStart, setWeekStart ] = React.useState(new Date());
     const [ weekEnd, setWeekEnd ] = React.useState(new Date());
     const [dialogOpen, setDialogOpen] = React.useState(false);
     const [backdropOpen, setBackdropOpen] = React.useState(false);
+    const [ warningDialog, setWarningDialog ] = React.useState(false);
+    const [ chores, setChores ] = React.useState([]);
+    const [ groups, setGroups ] = React.useState([]);
 
+    function not(a, b) {
+    return a.filter((value) => b.indexOf(value) === -1);
+    }
+
+    function intersection(a, b) {
+    return a.filter((value) => b.indexOf(value) !== -1);
+    }
+
+    const handleChoresToggle = (value) => () => {
+        const currentIndex = chores.indexOf(value);
+        const newChores = [...chores];
+
+        if (currentIndex === -1) {
+        newChores.push(value);
+        } else {
+        newChores.splice(currentIndex, 1);
+        }
+        setChores(newChores);
+    };
+
+    const handleGroupsToggle = (value) => () => {
+        const currentIndex = groups.indexOf(value);
+        const newGroups = [...groups];
+
+        if (currentIndex === -1) {
+        newGroups.push(value);
+        } else {
+        newGroups.splice(currentIndex, 1);
+        }
+        setGroups(newGroups);
+    };
+
+    const customGroupsList = (items) => (
+        <Paper className={classes.paper}>
+        <List dense component="div" role="list">
+            {items.map((value) => {
+            const labelId = `transfer-list-item-${value}-label`;
+
+            return (
+                <ListItem key={value} role="listitem" button onClick={handleGroupsToggle(value)}>
+                    <ListItemIcon>
+                        <Checkbox
+                        checked={groups.indexOf(value) !== -1}
+                        tabIndex={-1}
+                        disableRipple
+                        inputProps={{ 'aria-labelledby': labelId }}
+                        />
+                    </ListItemIcon>
+                    <ListItemAvatar>
+                        <Avatar alt={value.avatar} src={value.picture}></Avatar>
+                    </ListItemAvatar>
+                    <Typography id={labelId}> {`${value.firstName}`} </Typography>
+                </ListItem>
+            );
+            })}
+            <ListItem />
+        </List>
+        </Paper>
+    );
+
+    const customChoresList = (items) => (
+        <Paper className={classes.paper}>
+        <List dense component="div" role="list">
+            {items.map((value) => {
+            const labelId = `transfer-list-item-${value}-label`;
+
+            return (
+                <ListItem key={value} role="listitem" button onClick={handleChoresToggle(value)}>
+                    <ListItemIcon>
+                        <Checkbox
+                        checked={chores.indexOf(value) !== -1}
+                        tabIndex={-1}
+                        disableRipple
+                        inputProps={{ 'aria-labelledby': labelId }}
+                        />
+                    </ListItemIcon>
+                    <ListItemText id={labelId} primary={`${value}`} />
+
+                </ListItem>
+            );
+            })}
+            <ListItem />
+        </List>
+        </Paper>
+    );
 
     const submit = (e) =>
     {
-        e.preventDefault();
         setDialogOpen(false);
         setBackdropOpen(true);
 
@@ -57,8 +146,8 @@ export default function AssignChores(props)
         numberOfDays = Math.floor((end - janOne) / (24 * 60 * 60 * 1000));
         const endWeekInteger = Math.ceil(( end.getDay() + 1 + numberOfDays) / 7);
 
-        let choresQueue = new Queue(props.household.chores); 
-        let groupQueue = new Queue(props.household.groups);
+        let choresQueue = new Queue(chores); 
+        let groupQueue = new Queue(groups);
 
         let promisesArray = new Array();
         let eventBody = '';
@@ -69,7 +158,7 @@ export default function AssignChores(props)
 
         for(let i =0; i < (endWeekInteger - startWeekInteger) + 1 ; i++)
         {
-            props.household.chores.forEach( (chore, index) => 
+            chores.forEach( (chore, index) => 
             {
                 let nextGroupNames = ''; 
                 groupQueue.front().forEach( (user, index, array) => 
@@ -171,49 +260,62 @@ export default function AssignChores(props)
                     </MuiPickersUtilsProvider>
                 </Grid>
 
-                <Grid item xs={6}>
-                    Chores
-                    <Paper elevation ={2}>
-                        <List>
-                        {props.household.chores.map(chores => (
-                        <ListItem key={`${chores}`}>
-                            <ListItemText primary={`${chores}`} />
-                        </ListItem>
-                        ))}
-                    </List>
-                    </Paper>
-                </Grid>
+                {
+                    props.household.chores?
+                    <Grid item xs={6}>
+                        Chores
+                        {customChoresList(props.household.chores)}
+                    </Grid>
+                    :
+                    <Typography> Create chores to assign Chores </Typography>
+                }
+
 
                 <Grid item xs={6}>
                     Members
                     <Paper elevation ={2} style={{overflow:'auto'}}>
                         <List>
-                        {props.household.groups.map((group, index) => (
-                            <li key={`section-${index}`}>
-                            <ul>
-                                <ListSubheader>
-                                <Typography>{`Group${index +1}`}                     
-                                </Typography>
-                                </ListSubheader>
-                                {group.map(users => (
-                                <ListItem key={`Group-${ index }-${users._id}`}>
-                                    <ListItemAvatar>
-                                        <Avatar alt={users.firstName} src={users.picture}></Avatar>
-                                    </ListItemAvatar>
-                                    <ListItemText primary={`${users.firstName}`} />
-                                </ListItem>
-                                ))}
-                            </ul>
-                            </li>
-                        ))}
-                    </List>
+                            {props.household.groups.map((group, index) => (
+                                <li key={`section-${index}`}>
+                                <ul style={{padding: 0}}>
+                                    <ListSubheader onClick={handleGroupsToggle(group)}>
+                                        <Checkbox
+                                        checked={groups.indexOf(group) !== -1}
+                                        tabIndex={-1}
+                                        disableRipple
+                                        inputProps={{ 'aria-labelledby': `group-transfer-list-item-${group}` }}
+                                        />
+                                        {`Group ${index + 1}`}
+                                    </ListSubheader>
+                                    {group.map(users => (
+                                    <ListItem key={`G-${ index }-${users._id}`}>
+                                        <ListItemAvatar>
+                                            <Avatar alt={users.firstName} src={users.picture}></Avatar>
+                                        </ListItemAvatar>
+                                        <ListItemText primary={`${users.firstName}`} />
+                                    </ListItem>
+                                    ))}
+                                </ul>
+                                </li>
+                            ))}
+                        </List>
                     </Paper>
                 </Grid>
             </Grid>
             <DialogActions >
-                <Button value='submit' type='submit' onClick = {submit} style={{verticalAlign:'bottom', }}>Submit</Button>
+                <Button value='submit' onClick = {() => setWarningDialog(true) } style={{verticalAlign:'bottom', }} disabled={props.household.chores==null}>Continue</Button>
             </DialogActions>
                 </form>
+                <Dialog
+                open = {warningDialog}
+                onClose = { () => setWarningDialog(false) }>
+                    <DialogContentText>
+                        By clicking submit, you will assign the selected chores to the selected groups starting from the week of {weekStart.toDateString()} to the week of {weekEnd.toDateString()}
+                    </DialogContentText>
+                    <DialogActions>
+                        <Button value='submit' type='submit' onClick = {submit} style={{verticalAlign:'bottom', }}>Submit</Button>
+                    </DialogActions>
+                </Dialog>
             </Dialog>
         </div>)
 }

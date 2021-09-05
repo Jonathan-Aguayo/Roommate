@@ -81,7 +81,6 @@ app.post('/api/v1/households', isLoggedIn, (req,res) =>
         {
             res.status(500).json({message: 'Users are only allowed to be a part of one household at a time'})
         }
-
         else
         {
             fetch(`https://www.googleapis.com/calendar/v3/calendars?key=${process.env.APIKEY}`, {
@@ -129,15 +128,15 @@ app.post('/api/v1/households', isLoggedIn, (req,res) =>
     });
 });
 
-app.get('/api/v1/households/public', isLoggedIn, (req,res) => 
+app.get('/api/v1/households/public/:houseID', isLoggedIn, (req,res) => 
 {
-    HouseHold.findById(req.session.passport.user.user.household).then(house =>
+    HouseHold.findById(req.params.houseID).then(house =>
     {
         fetch(`https://www.googleapis.com/calendar/v3/calendars/${house.calendarID}/acl?key=${process.env.APIKEY}`,  
         {
             method:'POST',
             headers:{'Authorization':`Bearer ${req.session.passport.user.accessToken}`, 'Accept':'application/json','Content-Type':'application/json'},
-            body:JSON.stringify({"role":"writer","scope":{"type":"default"}}),
+            body:JSON.stringify({"role":"reader","scope":{"type":"default"}}),
         })
         .then(response => 
         {
@@ -157,17 +156,26 @@ app.get('/api/v1/households/public', isLoggedIn, (req,res) =>
     })
 })
 
-app.delete('/api/v1/houseHolds/group', isLoggedIn, (req, res) =>
+app.put('/api/v1/houseHolds/group', isLoggedIn, (req, res) =>
 {
     User.findById(req.session.passport.user.user._id).then( user =>
     {
-        HouseHold.findById(user.household).then(house =>
-        
+        if(user.household)
         {
-            let updatedGroups = house.groups;
-            updatedGroups.filter( ( group, index ) => index == req.body.Index);
-            HouseHold.updateOne( { _id: house._id}, {  } )
-        })
+            HouseHold.findById(user.household).then(house =>
+            {
+                let updatedGroups = req.body.groups;
+                HouseHold.updateOne( { _id: house._id}, {groups: req.body.groups} ).then( () =>
+                {
+                    res.status(200).json({message: 'okay'})
+                })
+            })
+        }
+        else
+        {
+            res.status(400).json({message: 'Must first join household'})
+        }
+
     })
 })
 
@@ -175,6 +183,8 @@ app.post('/api/v1/events', isLoggedIn, (req,res) =>
 {
     HouseHold.findById(req.session.passport.user.user.household).then(house => 
     {
+        console.dir(house.calendarID)
+        
         fetch(`https://www.googleapis.com/calendar/v3/calendars/${house.calendarID}/events?key=${process.env.APIKEY}`, {
             method:'POST',
             headers:{'Authorization':`Bearer ${req.session.passport.user.accessToken}`, 'Accept':'application/json','Content-Type':'application/json'},
@@ -192,7 +202,7 @@ app.post('/api/v1/events', isLoggedIn, (req,res) =>
             }
             else
             {
-                res.status(501).json({message:response.body});
+                res.status(500).json({message:response.body});
             }
         })
         .catch(err => 
@@ -246,7 +256,7 @@ app.post('/api/v1/invite/', isLoggedIn, (req,res) =>
     {
         HouseHold.findById(req.session.passport.user.user.household).then(house =>
         {
-            console.dir(house);
+            console.dir(house.calendarID)
             fetch(`https://www.googleapis.com/calendar/v3/calendars/${house.calendarID}/acl?key=${process.env.APIKEY}`, 
             {
                 method:'POST',
@@ -286,7 +296,10 @@ app.post('/api/v1/invite/', isLoggedIn, (req,res) =>
                 }
                 else
                 {
-                    res.status(500).json({message: 'Problem inviting user to calendar'})
+                    response.json().then(message=>
+                    {
+                        res.status(500).json({'message': message})
+                    })
                 }
             })
             .catch(err => 
@@ -384,6 +397,7 @@ app.get('/api/v1/houseHolds/', isLoggedIn, (req,res) =>
 
 app.patch('/api/v1/houseHolds/addMembers', isLoggedIn, (req,res) =>
 {
+    console.dir(req.body)
     User.findById(req.session.passport.user.user._id).then(user =>
     {
         if(user.household)
@@ -392,7 +406,7 @@ app.patch('/api/v1/houseHolds/addMembers', isLoggedIn, (req,res) =>
         }
         else
         {
-            HouseHold.findById(user.household, function(err,house) {
+            HouseHold.findById(req.body.houseID, function(err,house) {
             {
                 if(err)
                 {
@@ -423,35 +437,20 @@ app.patch('/api/v1/houseHolds/Chore', isLoggedIn, (req,res) =>
     {
         if(user.household)
         {
-            HouseHold.findById(user.household).then(house =>
+            HouseHold.updateOne({ _id: user.household }, { chores: req.body.updatedChores }).then( () =>
             {
-                let updatedChores = house.chores;
-                updatedChores.push(req.body.Chore);
-                HouseHold.updateOne({ _id: house._id }, { chores: updatedChores }).then( () =>
-                {
-                    res.status(200).json({message: updatedChores});
-                })
+                res.status(200);
             })
         }
         else
         {
             res.status(500).json({message: 'Join house to add chores'})
         }
-    }) 
-})
-
-app.post('/api/v1/househHolds/assignChores', isLoggedIn, (req,res) => 
-{
-
-    Promise.all(promisesArray).then( values => 
-        {
-            console.dir(values);
-        })
+    })
 })
 
 app.delete('/api/v1/houseHolds/:houseID',isLoggedIn,(req,res) => 
 {
-    console.log(req.params.houseID);
     HouseHold.findById(req.params.houseID).then(houseHold => 
     {
         if(houseHold.owner == req.session.passport.user.user._id)
@@ -463,7 +462,22 @@ app.delete('/api/v1/houseHolds/:houseID',isLoggedIn,(req,res) =>
                     req.session.passport.user.user.household = null;
                     Message.deleteMany({ household: req.params.houseID }).then(deleted=>
                     {
-                        res.status(200).json({message: req.session.passport.user.user})
+                        fetch(`https://www.googleapis.com/calendar/v3/calendars/${houseHold.calendarID}?key=${process.env.APIKEY}`, 
+                        {
+                            method:'DELETE',
+                            headers:{'Authorization':`Bearer ${req.session.passport.user.accessToken}`, 'Accept':'application/json','Content-Type':'application/json'},
+                        })
+                        .then(response =>
+                        {
+                            if(response.ok)
+                            {
+                                res.status(200).json({message: req.session.passport.user.user})
+                            }
+                            else
+                            {
+                                res.status(500).json({message: 'Error occured while deleted google calendar from '});
+                            }
+                        })
                     })
                 })
             });
@@ -494,7 +508,7 @@ app.get('/api/v1/logout', (req,res) =>
 {
     req.session = null; 
     req.logout();
-    res.redirect('/');
+    res.redirect('/home');
 });
 
 app.get('/auth/google/failure',(req,res) => {res.send('Unable to login')});

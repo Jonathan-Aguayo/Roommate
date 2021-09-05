@@ -2,85 +2,39 @@ import React from 'react';
 import AppBar from './AppBar.jsx'
 import 'whatwg-fetch';
 import {Snackbar} from '@material-ui/core';
-
-export default class Template extends React.Component
+import { SnackbarContent } from '@material-ui/core';
+import { UserContext } from './App.jsx';
+import { isNull } from 'lodash';
+export default function Template(props)
 {
-   constructor(props)
-   {
-       super(props);
-       this.loadData = this.loadData.bind(this);
-       this.state = {
-           user: {},
-           open:false,
-       }
-    this.handleClose = this.handleClose.bind(this); 
-   }
-
-   componentDidMount()
-   {
-       this.loadData();
-   }
-
-   loadData()
-   {
-        fetch('/api/v1/user/')
-        .then(res => 
-        {
-            if(res.ok)
-            {   
-                res.json().then(message => 
-                {
-                    
-                    this.setState({
-                        user: message.message.user,
-                    })
-                })
-            }   
-            else
-            {
-                res.json().then(message =>
-                {
-                    this.setState({
-                        open:true,
-                    })
-                })
-            }
-        })
-    }
-
-    handleClose(event, reason)
-    {
-        if(reason==='clickaway')
-        {
-            return;
-        }
-        this.setState({
-            open:false,
-        })
-    }
+    const {user} = React.useContext(UserContext);
+    const [open, setOpen] = React.useState();
 
 
-    render()
-    {
-        return(
+    return(
 
-            <div className='MainContainer'>
-                <Snackbar
-                open={this.state.open}
+        <div className='MainContainer'>
+            <Snackbar
+            open={open}
+            anchorOrigin = {{
+                vertical:'bottom',
+                horizontal: 'left'
+            }}
+            >
+                <SnackbarContent
                 autoHideDuration={6000}
-                onClose={this.handleClose}
                 message={'Sign in to view household information'}
-                />
-                <div className='header'>
-                    <AppBar user={this.state.user} />
-                </div>
-
-                <div className='body'>
-                    {React.cloneElement(this.props.children, {user: this.state.user})}
-                </div>
-
+                style={{backgroundColor: 'red'}}/>
+            </Snackbar>
+            <div className='header'>
+                <AppBar/>
             </div>
-        );
-    }
+
+            <div className='body'>
+                {React.cloneElement(props.children,)}
+            </div>
+
+        </div>
+    );
 
 }

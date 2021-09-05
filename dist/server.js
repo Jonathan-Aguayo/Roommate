@@ -135,12 +135,12 @@ app.post('/api/v1/households', isLoggedIn, function (req, res) {
     });
 });
 
-app.get('/api/v1/households/public', isLoggedIn, function (req, res) {
-    _Household2.default.findById(req.session.passport.user.user.household).then(function (house) {
+app.get('/api/v1/households/public/:houseID', isLoggedIn, function (req, res) {
+    _Household2.default.findById(req.params.houseID).then(function (house) {
         (0, _nodeFetch2.default)('https://www.googleapis.com/calendar/v3/calendars/' + house.calendarID + '/acl?key=' + process.env.APIKEY, {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + req.session.passport.user.accessToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
-            body: JSON.stringify({ "role": "writer", "scope": { "type": "default" } })
+            body: JSON.stringify({ "role": "reader", "scope": { "type": "default" } })
         }).then(function (response) {
             if (response.ok) {
                 res.status(200).json({ message: 'Success' });
@@ -153,20 +153,25 @@ app.get('/api/v1/households/public', isLoggedIn, function (req, res) {
     });
 });
 
-app.delete('/api/v1/houseHolds/group', isLoggedIn, function (req, res) {
+app.put('/api/v1/houseHolds/group', isLoggedIn, function (req, res) {
     _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
-        _Household2.default.findById(user.household).then(function (house) {
-            var updatedGroups = house.groups;
-            updatedGroups.filter(function (group, index) {
-                return index == req.body.Index;
+        if (user.household) {
+            _Household2.default.findById(user.household).then(function (house) {
+                var updatedGroups = req.body.groups;
+                _Household2.default.updateOne({ _id: house._id }, { groups: req.body.groups }).then(function () {
+                    res.status(200).json({ message: 'okay' });
+                });
             });
-            _Household2.default.updateOne({ _id: house._id }, {});
-        });
+        } else {
+            res.status(400).json({ message: 'Must first join household' });
+        }
     });
 });
 
 app.post('/api/v1/events', isLoggedIn, function (req, res) {
     _Household2.default.findById(req.session.passport.user.user.household).then(function (house) {
+        console.dir(house.calendarID);
+
         (0, _nodeFetch2.default)('https://www.googleapis.com/calendar/v3/calendars/' + house.calendarID + '/events?key=' + process.env.APIKEY, {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + req.session.passport.user.accessToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
@@ -177,7 +182,7 @@ app.post('/api/v1/events', isLoggedIn, function (req, res) {
                     res.status(200).json({ 'message': message });
                 });
             } else {
-                res.status(501).json({ message: response.body });
+                res.status(500).json({ message: response.body });
             }
         }).catch(function (err) {
             res.status(500).json({ message: err });
@@ -213,7 +218,7 @@ app.post('/api/v1/messages', isLoggedIn, function (req, res) {
 app.post('/api/v1/invite/', isLoggedIn, function (req, res) {
     if (req.session.passport.user.user.household) {
         _Household2.default.findById(req.session.passport.user.user.household).then(function (house) {
-            console.dir(house);
+            console.dir(house.calendarID);
             (0, _nodeFetch2.default)('https://www.googleapis.com/calendar/v3/calendars/' + house.calendarID + '/acl?key=' + process.env.APIKEY, {
                 method: 'POST',
                 headers: { 'Authorization': 'Bearer ' + req.session.passport.user.accessToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
@@ -240,7 +245,9 @@ app.post('/api/v1/invite/', isLoggedIn, function (req, res) {
                         }
                     });
                 } else {
-                    res.status(500).json({ message: 'Problem inviting user to calendar' });
+                    response.json().then(function (message) {
+                        res.status(500).json({ 'message': message });
+                    });
                 }
             }).catch(function (err) {
                 res.status(500).json({ message: err });
@@ -303,11 +310,12 @@ app.get('/api/v1/houseHolds/', isLoggedIn, function (req, res) {
 });
 
 app.patch('/api/v1/houseHolds/addMembers', isLoggedIn, function (req, res) {
+    console.dir(req.body);
     _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
         if (user.household) {
             res.status(500).json({ message: 'Users are only allowed to be a part of one household at a time' });
         } else {
-            _Household2.default.findById(user.household, function (err, house) {
+            _Household2.default.findById(req.body.houseID, function (err, house) {
                 {
                     if (err) {
                         res.status(404).json({ message: 'Not a valid House Id' });
@@ -330,12 +338,8 @@ app.patch('/api/v1/houseHolds/addMembers', isLoggedIn, function (req, res) {
 app.patch('/api/v1/houseHolds/Chore', isLoggedIn, function (req, res) {
     _User2.default.findById(req.session.passport.user.user._id).then(function (user) {
         if (user.household) {
-            _Household2.default.findById(user.household).then(function (house) {
-                var updatedChores = house.chores;
-                updatedChores.push(req.body.Chore);
-                _Household2.default.updateOne({ _id: house._id }, { chores: updatedChores }).then(function () {
-                    res.status(200).json({ message: updatedChores });
-                });
+            _Household2.default.updateOne({ _id: user.household }, { chores: req.body.updatedChores }).then(function () {
+                res.status(200);
             });
         } else {
             res.status(500).json({ message: 'Join house to add chores' });
@@ -343,22 +347,23 @@ app.patch('/api/v1/houseHolds/Chore', isLoggedIn, function (req, res) {
     });
 });
 
-app.post('/api/v1/househHolds/assignChores', isLoggedIn, function (req, res) {
-
-    Promise.all(promisesArray).then(function (values) {
-        console.dir(values);
-    });
-});
-
 app.delete('/api/v1/houseHolds/:houseID', isLoggedIn, function (req, res) {
-    console.log(req.params.houseID);
     _Household2.default.findById(req.params.houseID).then(function (houseHold) {
         if (houseHold.owner == req.session.passport.user.user._id) {
             _Household2.default.deleteOne({ _id: houseHold._id }).then(function () {
                 _User2.default.updateMany({ household: houseHold._id }, { household: null }).then(function (update) {
                     req.session.passport.user.user.household = null;
                     _Message2.default.deleteMany({ household: req.params.houseID }).then(function (deleted) {
-                        res.status(200).json({ message: req.session.passport.user.user });
+                        (0, _nodeFetch2.default)('https://www.googleapis.com/calendar/v3/calendars/' + houseHold.calendarID + '?key=' + process.env.APIKEY, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': 'Bearer ' + req.session.passport.user.accessToken, 'Accept': 'application/json', 'Content-Type': 'application/json' }
+                        }).then(function (response) {
+                            if (response.ok) {
+                                res.status(200).json({ message: req.session.passport.user.user });
+                            } else {
+                                res.status(500).json({ message: 'Error occured while deleted google calendar from ' });
+                            }
+                        });
                     });
                 });
             });
@@ -383,7 +388,7 @@ app.get('/auth/google', function (req, res, next) {
 app.get('/api/v1/logout', function (req, res) {
     req.session = null;
     req.logout();
-    res.redirect('/');
+    res.redirect('/home');
 });
 
 app.get('/auth/google/failure', function (req, res) {

@@ -9,9 +9,9 @@ export default function InviteUser (props)
     const [error, setError] = React.useState(false);
     const Invite = () =>
     {
-        fetch('/api/v1/invite', 
+        fetch('/auth/google?returnTo=/api/v1/invite', 
         {
-            method:'POST',
+            method:'GET',
             headers:{'Accept':'application/json','Content-Type':'application/json'},
             body:JSON.stringify({'To':to}),
         })
