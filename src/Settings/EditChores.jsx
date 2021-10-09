@@ -61,13 +61,6 @@ export default function EditChores (props)
             headers: {'Accept':'application/json','Content-Type':'application/json'},
             body: JSON.stringify({'updatedChores': updatedChores})
         })
-        .then( res =>
-        {
-            console.dir(res);
-            if(res.ok)
-            {
-            }
-        })
     }
 
     return(
@@ -100,17 +93,16 @@ export default function EditChores (props)
                 <Grid container justify='space-between' alignItems='flex-end'>
                     <form onSubmit={handleSubmit}>
                         <FormControl variant="outlined" style={{paddingTop:'25px'}}>
-                            <InputLabel htmlFor="outlined-adornment-amount">New Chore</InputLabel>
+                            <InputLabel id='New chore'>New Chore</InputLabel>
                             <OutlinedInput
-                                id="outlined-adornment-amount"
+                                id='New chore'
                                 value={newChore}
                                 onChange={handleChoreChange}
-                                labelWidth={60}
+                                label='New Chore'
                             />
                         </FormControl>
                     </form>
                     <Button variant='outlined' type='submit'> Submit</Button>
-                    
                 </Grid>
             </Grid>
         </Paper>
