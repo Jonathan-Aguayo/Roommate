@@ -2,3 +2,4 @@ node_modules
 .vscode
 my.env
 yarn.lock
+.env
