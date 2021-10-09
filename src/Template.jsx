@@ -33,6 +33,9 @@ export default function Template(props)
             <div className='body'>
                 {React.cloneElement(props.children,)}
             </div>
+            <div>
+                
+            </div>
 
         </div>
     );
