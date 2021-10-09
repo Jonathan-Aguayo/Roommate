@@ -102,7 +102,7 @@ export default function EditChores (props)
                             />
                         </FormControl>
                     </form>
-                    <Button variant='outlined' type='submit'> Submit</Button>
+                    <Button variant='outlined' type='submit' onClick={handleSubmit}> Submit</Button>
                 </Grid>
             </Grid>
         </Paper>
