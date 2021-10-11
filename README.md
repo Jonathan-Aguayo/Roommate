@@ -13,3 +13,15 @@ yarn build
 ```
 
 to bundle your application
+
+# Project Homescreen
+
+# Adding event to calendar
+
+# Account page view for household owner
+
+# Account page view for members of household
+
+# Assigning chores
+
+# Inviting people to your household
