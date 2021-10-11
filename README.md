@@ -63,7 +63,7 @@ to bundle your application
 ![automated google message](static/readmepics/invitehousemate4.PNG)
 5. Email sent by room8tes email messenger
 
-    ![automated room8tes email](static/readmepics/invitehousemate5.PNG)
+![automated room8tes email](static/readmepics/invitehousemate5.PNG)
 6. Invited party clicks the join link and enters the household ID mentioned in the email to join the household
 ![invite housemate page](static/readmepics/invitehousemate6.PNG)
 
