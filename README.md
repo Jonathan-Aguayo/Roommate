@@ -15,6 +15,7 @@ yarn build
 to bundle your application
 
 # Project Homescreen
+![image of homescreen] (./static/readmepics/Home screen.PNG)
 
 # Adding event to calendar
 
