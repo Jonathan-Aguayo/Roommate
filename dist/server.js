@@ -246,7 +246,7 @@ app.post('/api/v1/invite/', isLoggedIn, function (req, res) {
                     });
                 } else {
                     response.json().then(function (message) {
-                        res.status(500).json({ 'message': message });
+                        res.status(503).json({ message: message });
                     });
                 }
             }).catch(function (err) {

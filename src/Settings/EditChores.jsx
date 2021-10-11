@@ -89,7 +89,6 @@ export default function EditChores (props)
                     <p hidden></p>                   
                 }
 
-
                 <Grid container justify='space-between' alignItems='flex-end'>
                     <form onSubmit={handleSubmit}>
                         <FormControl variant="outlined" style={{paddingTop:'25px'}}>

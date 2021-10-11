@@ -2,7 +2,7 @@ import React from 'react';
 import 'whatwg-fetch';
 import {Button} from '@material-ui/core';
 import {TextField} from '@material-ui/core';
-
+import {Grid} from '@material-ui/core'
 export default function JoinHouseHold(props)
 {
     const [householdID, setHouseholdID] = React.useState('');
@@ -44,19 +44,23 @@ export default function JoinHouseHold(props)
 
 
     return(
-        <div>
-            <form noValidate onSubmit={handleSubmit}> 
+        <form noValidate onSubmit={handleSubmit} > 
+            <Grid container justify='center'spacing={1}>
+                <Grid item container xs={12} justify='center' alignItems='flex-end'>
                 <TextField
                 required
                 helperText='Enter household ID'
                 id = 'householdID' 
                 label='House hold' 
                 value={householdID}
-                onChange = {(event) => setHouseholdID(event.target.value)}/>
+                onChange = {(event) => setHouseholdID(event.target.value)}
+                style={{width:'25%'}}/>
+
                 <Button 
                 type='submit'
                 >Submit</Button>
-            </form>
-        </div>
+                </Grid>
+            </Grid>
+        </form>
     )
 }

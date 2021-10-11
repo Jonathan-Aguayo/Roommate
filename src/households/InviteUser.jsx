@@ -2,16 +2,16 @@ import React from 'react';
 import 'whatwg-fetch';
 import {Button} from '@material-ui/core';
 import {TextField} from '@material-ui/core';
-
+import {Grid} from '@material-ui/core'
 export default function InviteUser (props)
 {
     const [to, setTo] = React.useState('');
     const [error, setError] = React.useState(false);
     const Invite = () =>
     {
-        fetch('/auth/google?returnTo=/api/v1/invite', 
+        fetch('/api/v1/invite/', 
         {
-            method:'GET',
+            method:'POST',
             headers:{'Accept':'application/json','Content-Type':'application/json'},
             body:JSON.stringify({'To':to}),
         })
@@ -33,7 +33,7 @@ export default function InviteUser (props)
             })
         .catch(err => 
             {
-                alert(`Error: ${err}`)
+                alert(`Error: ${err.message}`)
             })
     }
 
@@ -65,20 +65,27 @@ export default function InviteUser (props)
     }
     
     return(
-        <div>
-            <form noValidate onSubmit={handleSubmit}> 
-                <TextField
-                required
-                helperText='please enter a valid email address'
-                error = {error}
-                id = 'to' 
-                label='To' 
-                onChange = {(event) => formChange(event.target.value)}/>
-                <Button 
-                type='submit'
-                disabled={error}>Submit</Button>
-            </form>
-        </div>
+        <form noValidate onSubmit={handleSubmit} > 
+            <Grid container justify='center'spacing={1}>
+                <Grid item container xs={12} justify='center' alignItems='flex-end'>
+                    <TextField
+                    required
+                    helperText='please enter a valid email address'
+                    error = {error}
+                    id = 'to' 
+                    label='To' 
+                    onChange = {(event) => formChange(event.target.value)}
+                    style={{width:'25%'}}
+                    />
+
+                    <Button 
+                    type='submit'
+                    disabled={error}>
+                    Submit
+                    </Button>
+                </Grid>
+            </Grid>
+        </form>
 
     );
 }

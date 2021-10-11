@@ -298,7 +298,7 @@ app.post('/api/v1/invite/', isLoggedIn, (req,res) =>
                 {
                     response.json().then(message=>
                     {
-                        res.status(500).json({'message': message})
+                        res.status(503).json({message: message})
                     })
                 }
             })
