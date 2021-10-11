@@ -23,9 +23,9 @@ to bundle your application
 2. Select start date, end date, name of event, and who it is assigned to (optional) 
 ![add task menu](static/readmepics/addtask2.PNG)
 ![add task menu](static/readmepics/addtask3.PNG)
+
 3. Refresh the page and event will appear on household calendar. Everyone in the household can see the event
 ![add task menu](static/readmepics/addtask4.PNG)
-
 
 # Account page view for household owner
 ### Only the owner will have this view. The owner options are in the topmost section
@@ -39,24 +39,20 @@ to bundle your application
 
 2. Confirmation dialog
 ![confirmation dialog](static/readmepics/assignchores2.PNG)
+
 3. Chores now appear in the shared google calendar
 ![calendar view of chores](static/readmepics/assignchores3.PNG)
 ![chore rotation example 1](static/readmepics/assignchores4.PNG)
 ![chore rotation example 2](static/readmepics/assignchores5.PNG)
 
-
-
-
 # Account page view for members of household
 ![group member account view](static/readmepics/groupmemberaccountview.PNG)
-
 
 # Inviting people to your household
 1. Click on invite housemate button which will reauthenticate user and redirect to invite page. Reauthentication is used to refresh the access token needed to change the calendar access control and allow invited party to make changes.
 ![invite housemate page](static/readmepics/invitehousemate1.PNG)
 
 2. Completed form input
-
 ![complete input](static/readmepics/invitehousemate2.PNG)
 
 3. Success alert
