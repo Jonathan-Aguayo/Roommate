@@ -1,4 +1,4 @@
-# 🚀 Welcome to your new awesome project!
+# 🚀 Room8tes household chore tracker
 
 This project has been created using **webpack-cli**, you can now run
 
@@ -13,6 +13,17 @@ yarn build
 ```
 
 to bundle your application
+
+To start the server run
+```
+yarn start
+```
+
+or 
+
+```
+npm start
+```
 
 # Project Homescreen
 ![image of homescreen](static/readmepics/homescreen.PNG)
