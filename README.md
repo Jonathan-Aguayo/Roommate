@@ -54,16 +54,21 @@ to bundle your application
 # Inviting people to your household
 1. Click on invite housemate button which will reauthenticate user and redirect to invite page. Reauthentication is used to refresh the access token needed to change the calendar access control and allow invited party to make changes.
 ![invite housemate page](static/readmepics/invitehousemate1.PNG)
+
 2. Completed form input
 
 ![complete input](static/readmepics/invitehousemate2.PNG)
+
 3. Success alert
 ![invite success alert](static/readmepics/invitehousemate3.PNG)
+
 4. Google will send party an automated message saying that a new google calendar has been shared with them.
 ![automated google message](static/readmepics/invitehousemate4.PNG)
+
 5. Email sent by room8tes email messenger
 
 ![automated room8tes email](static/readmepics/invitehousemate5.PNG)
-6. Invited party clicks the join link and enters the household ID mentioned in the email to join the household
+
+6. Invited party clicks the join link and enters the household ID mentioned in the email to join the household.
 ![invite housemate page](static/readmepics/invitehousemate6.PNG)
 
